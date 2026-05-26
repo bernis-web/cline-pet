@@ -6,7 +6,7 @@
   "main": "dist/app/main/main.js",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "dev:electron": "npm install --include=optional electron && npm run build:main && electron .",
+    "dev:electron": "npm run build && electron .",
     "dev:mcp": "tsx src/mcp/server.ts",
     "build": "npm run build:renderer && npm run build:main",
     "build:renderer": "vite build",
@@ -33,6 +33,6 @@
     "vitest": "latest"
   },
   "optionalDependencies": {
-    "electron": "latest"
+    "electron": "^42.2.0"
   }
 }

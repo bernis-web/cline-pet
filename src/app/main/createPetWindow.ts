@@ -1,5 +1,8 @@
 import { BrowserWindow, screen } from "electron";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const currentDir = fileURLToPath(new URL(".", import.meta.url));
 
 export function createPetWindow() {
   const display = screen.getPrimaryDisplay();
@@ -15,7 +18,7 @@ export function createPetWindow() {
     alwaysOnTop: true,
     resizable: false,
     hasShadow: false,
-    webPreferences: { preload: join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false }
+    webPreferences: { preload: join(currentDir, "preload.js"), contextIsolation: true, nodeIntegration: false }
   });
   win.setAlwaysOnTop(true, "floating");
   return win;
