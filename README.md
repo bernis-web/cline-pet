@@ -22,7 +22,29 @@
 - npm
 - Git（可选，用于拉取仓库）
 
-## 安装
+## 一键启动（推荐）
+
+下载或 clone 仓库后，在项目根目录双击：
+
+`	ext
+start-cline-pet.bat
+`
+
+这个脚本会自动：
+
+1. 进入当前项目目录
+2. 检查是否安装了 npm
+3. 如果没有 
+ode_modules，自动执行 
+pm install
+4. 如果没有 Electron，自动执行 
+pm install --include=optional electron
+5. 启动桌宠：
+pm run dev:electron
+
+> 第一次启动可能会比较慢，因为 Electron 需要下载二进制文件；下载完成后，后续双击启动会快很多。
+
+## 手动安装
 
 `powershell
 git clone https://github.com/bernis-web/cline-pet.git
@@ -36,9 +58,7 @@ npm install
 npm install --include=optional electron
 `
 
-## 启动桌宠
-
-### 方式 1：直接启动 Electron 桌宠
+## 手动启动桌宠
 
 `powershell
 cd cline-pet
@@ -47,7 +67,7 @@ npm run dev:electron
 
 首次运行会构建主进程并启动 Electron。如果看到 Electron 下载进度，请等待下载完成后再运行一次。
 
-### 方式 2：只启动 MCP Server
+## 启动 MCP Server
 
 `powershell
 cd cline-pet
