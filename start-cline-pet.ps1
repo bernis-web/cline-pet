@@ -4,9 +4,44 @@ Set-Location -Path $PSScriptRoot
 $env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
 $env:npm_config_electron_mirror = 'https://npmmirror.com/mirrors/electron/'
 
+function Stop-CurrentProjectPetProcesses {
+  $projectPath = (Resolve-Path $PSScriptRoot).Path.ToLowerInvariant()
+  $processes = Get-CimInstance Win32_Process | Where-Object {
+    ($_.Name -eq 'electron.exe' -or $_.Name -eq 'node.exe') -and
+    $_.CommandLine -and
+    $_.CommandLine.ToLowerInvariant().Contains($projectPath)
+  }
+  foreach ($process in $processes) {
+    Write-Host "Stopping stale process $($process.ProcessId) $($process.Name) ..." -ForegroundColor Yellow
+    Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+  }
+}
+
 Write-Host '========================================' -ForegroundColor Cyan
 Write-Host ' Cline Desktop Pet launcher' -ForegroundColor Cyan
 Write-Host '========================================' -ForegroundColor Cyan
+
+$bridgeUrl = 'http://127.0.0.1:37621'
+$existingApp = $false
+try {
+  $diagnostics = Invoke-WebRequest -UseBasicParsing -Uri "$bridgeUrl/diagnostics" -TimeoutSec 1
+  if ($diagnostics.StatusCode -eq 200) { $existingApp = $true }
+} catch {
+  $existingApp = $false
+}
+
+if ($existingApp) {
+  Write-Host 'Cline Desktop Pet is already running. Showing existing window ...' -ForegroundColor Green
+  try {
+    Invoke-WebRequest -UseBasicParsing -Method Post -Uri "$bridgeUrl/show" -TimeoutSec 2 | Out-Null
+    Write-Host 'Existing window show request sent. If you still cannot see it, check the tray icon or restart electron.exe from Task Manager.' -ForegroundColor Green
+    exit 0
+  } catch {
+    Write-Host 'Existing bridge did not support /show. Restarting stale local pet processes ...' -ForegroundColor Yellow
+    Stop-CurrentProjectPetProcesses
+    Start-Sleep -Seconds 2
+  }
+}
 
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
   Write-Host 'npm was not found. Please install Node.js first: https://nodejs.org/' -ForegroundColor Red

@@ -5,6 +5,8 @@ import type { UpdatePetStatusInput } from "../shared/schemas.js";
 export type BridgeServerHandlers = {
   onStatus(payload: UpdatePetStatusInput): void;
   onDiagnostics(): Record<string, unknown>;
+  onShow?(): void;
+  onQuit?(): void;
 };
 
 async function readJson(req: IncomingMessage) {
@@ -28,6 +30,14 @@ export function startBridgeServer(port: number, handlers: BridgeServerHandlers) 
     }
     if (req.method === "GET" && req.url === "/diagnostics") {
       return json(res, 200, handlers.onDiagnostics());
+    }
+    if (req.method === "POST" && req.url === "/show") {
+      handlers.onShow?.();
+      return json(res, 200, { ok: true });
+    }
+    if (req.method === "POST" && req.url === "/quit") {
+      handlers.onQuit?.();
+      return json(res, 200, { ok: true });
     }
     return json(res, 404, { ok: false, error: "not found" });
   });

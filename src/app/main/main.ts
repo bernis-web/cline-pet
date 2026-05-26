@@ -6,6 +6,7 @@ import { startBridgeServer } from "../../bridge/bridgeServer.js";
 import { buildDiagnosticsReport, formatDebugReport } from "../../diagnostics/diagnostics.js";
 import { discoverPetPacks, PetPack } from "../../assets/petPackManager.js";
 import { getPaths } from "../../shared/paths.js";
+import { writeLog } from "../../shared/logger.js";
 import type { UpdatePetStatusInput } from "../../shared/schemas.js";
 import { PET_STATUSES, PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
@@ -36,11 +37,24 @@ function saveSelectedId(stateFile: string, selectedPetPackId: string) {
   writeFileSync(stateFile, JSON.stringify({ selectedPetPackId }, null, 2), "utf8");
 }
 
+function showPetWindow(win: Electron.BrowserWindow) {
+  const bounds = win.getBounds();
+  writeLog(getPaths().appLog, "info", "show pet window", { visible: win.isVisible(), bounds });
+  if (win.isMinimized()) win.restore();
+  win.setAlwaysOnTop(true, "floating");
+  win.showInactive();
+  win.moveTop();
+}
+
 app.whenReady().then(async () => {
   const paths = getPaths();
   mkdirSync(paths.logs, { recursive: true });
   mkdirSync(paths.petPacks, { recursive: true });
+  writeLog(paths.appLog, "info", "app ready", { bridgePort, cwd: process.cwd() });
   const win = createPetWindow();
+  win.on("show", () => writeLog(paths.appLog, "info", "window show", { bounds: win.getBounds() }));
+  win.on("hide", () => writeLog(paths.appLog, "info", "window hide", { bounds: win.getBounds() }));
+  win.on("closed", () => writeLog(paths.appLog, "info", "window closed"));
   const rendererUrl = process.env.VITE_DEV_SERVER_URL ?? `file://${join(process.cwd(), "dist/app/renderer/index.html")}`;
   let packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)];
   let selectedPetPackId = loadSelectedId(paths.stateFile);
@@ -48,6 +62,7 @@ app.whenReady().then(async () => {
   const sendSelectedPack = () => win.webContents.send("pet-pack", { id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
   await win.loadURL(rendererUrl);
   win.webContents.once("did-finish-load", sendSelectedPack);
+  showPetWindow(win);
 
   const diagnostics = () => buildDiagnosticsReport({
     bridgePort,
@@ -63,7 +78,9 @@ app.whenReady().then(async () => {
       latestStatus = { ...payload, updatedAt: payload.updatedAt ?? new Date().toISOString() };
       win.webContents.send("pet-status", latestStatus);
     },
-    onDiagnostics: diagnostics
+    onDiagnostics: diagnostics,
+    onShow: () => showPetWindow(win),
+    onQuit: () => app.quit()
   });
 
   createTray({
