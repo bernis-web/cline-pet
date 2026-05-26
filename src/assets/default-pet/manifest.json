@@ -1,0 +1,15 @@
+{
+  "id": "default-pixel-dev",
+  "name": "Default Pixel Dev",
+  "version": "1.0.0",
+  "author": "Cline Desktop Pet",
+  "description": "Bundled fallback pixel pet.",
+  "states": {
+    "idle": "idle.svg",
+    "thinking": "thinking.svg",
+    "working": "working.svg",
+    "waiting-approval": "waiting-approval.svg",
+    "done": "done.svg",
+    "error": "error.svg"
+  }
+}

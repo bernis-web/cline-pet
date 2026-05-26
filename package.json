@@ -1,0 +1,38 @@
+{
+  "name": "cline-desktop-pet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/app/main/main.js",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:electron": "npm install --include=optional electron && npm run build:main && electron .",
+    "dev:mcp": "tsx src/mcp/server.ts",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "simulate": "tsx src/simulator/cycleStates.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "jsdom": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  },
+  "optionalDependencies": {
+    "electron": "latest"
+  }
+}
