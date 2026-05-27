@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { PetStatus } from "../../shared/statuses";
 import { DiagnosticsPanel } from "./DiagnosticsPanel";
 import { PetView } from "./PetView";
@@ -12,7 +12,7 @@ import errorImage from "../../assets/default-pet/error.svg";
 declare global {
   interface Window {
     clinePet?: {
-      onPetStatus(callback: (payload: { status: PetStatus; task?: string; updatedAt?: string }) => void): void;
+      onPetStatus(callback: (payload: { status: PetStatus; visibleStatus: PetStatus; baseStatus: PetStatus; overlayStatus: PetStatus | null; task?: string; updatedAt?: string; normalizedFrom?: string }) => void): void;
       onPetPack(callback: (payload: { stateImages: Record<PetStatus, string> }) => void): void;
     };
   }
@@ -20,15 +20,22 @@ declare global {
 
 const defaultImages: Record<PetStatus, string> = {
   idle: idleImage,
+  happy: doneImage,
+  sleepy: idleImage,
   thinking: thinkingImage,
-  working: workingImage,
-  "waiting-approval": waitingApprovalImage,
-  done: doneImage,
-  error: errorImage
+  angry: errorImage,
+  "not-found": errorImage,
+  message: waitingApprovalImage,
+  sleeping: idleImage,
+  "head-pat": doneImage,
+  dragging: workingImage,
+  loading: workingImage,
+  "signal-weak": errorImage
 };
 
 export function App() {
   const [status, setStatus] = useState<PetStatus>("idle");
+  const [visibleStatus, setVisibleStatus] = useState<PetStatus>("idle");
   const [task, setTask] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
   const [diagnostics, setDiagnostics] = useState("");
@@ -36,10 +43,11 @@ export function App() {
   useEffect(() => {
     window.clinePet?.onPetStatus((payload) => {
       setStatus(payload.status);
+      setVisibleStatus(payload.visibleStatus ?? payload.status);
       setTask(payload.task ?? "");
       setUpdatedAt(payload.updatedAt ?? "");
     });
-    window.clinePet?.onPetPack((payload) => setImages(payload.stateImages));
+    window.clinePet?.onPetPack((payload) => setImages({ ...defaultImages, ...payload.stateImages }));
   }, []);
-  return <><PetView status={status} task={task} updatedAt={updatedAt} imageSrc={images[status]} onDiagnose={() => setDiagnostics(`status=${status}\ntask=${task}\nupdatedAt=${updatedAt}`)}/><DiagnosticsPanel text={diagnostics} onClose={() => setDiagnostics("")}/></>;
+  return <><PetView status={visibleStatus} task={task} updatedAt={updatedAt} imageSrc={images[visibleStatus] ?? defaultImages.idle} onDiagnose={() => setDiagnostics(`status=${status}\nvisibleStatus=${visibleStatus}\ntask=${task}\nupdatedAt=${updatedAt}`)}/><DiagnosticsPanel text={diagnostics} onClose={() => setDiagnostics("")}/></>;
 }

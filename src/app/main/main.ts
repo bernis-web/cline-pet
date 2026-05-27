@@ -1,4 +1,4 @@
-import { app } from "electron";
+﻿import { app } from "electron";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,12 +8,20 @@ import { discoverPetPacks, PetPack } from "../../assets/petPackManager.js";
 import { getPaths } from "../../shared/paths.js";
 import { writeLog } from "../../shared/logger.js";
 import type { UpdatePetStatusInput } from "../../shared/schemas.js";
-import { PET_STATUSES, PetStatus } from "../../shared/statuses.js";
+import { PET_STATUSES, type PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
 import { createTray, openPath } from "./tray.js";
 
 const bridgePort = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
-let latestStatus: UpdatePetStatusInput = { status: "idle", task: "", source: "cline", updatedAt: new Date().toISOString() };
+let latestStatus: UpdatePetStatusInput = {
+  status: "idle",
+  visibleStatus: "idle",
+  baseStatus: "idle",
+  overlayStatus: null,
+  task: "",
+  source: "cline",
+  updatedAt: new Date().toISOString()
+};
 
 function toFileUrl(filePath: string) {
   return pathToFileURL(filePath).toString();
@@ -21,10 +29,33 @@ function toFileUrl(filePath: string) {
 
 function defaultPack(): PetPack {
   const dir = join(process.cwd(), "src/assets/default-pet");
+  const legacyDefaultFiles: Record<PetStatus, string> = {
+    idle: "idle.svg",
+    happy: "done.svg",
+    sleepy: "idle.svg",
+    thinking: "thinking.svg",
+    angry: "error.svg",
+    "not-found": "error.svg",
+    message: "waiting-approval.svg",
+    sleeping: "idle.svg",
+    "head-pat": "done.svg",
+    dragging: "working.svg",
+    loading: "working.svg",
+    "signal-weak": "error.svg"
+  };
   return {
     dir,
-    manifest: { id: "default-pixel-dev", name: "Default Pixel Dev", version: "1.0.0", states: Object.fromEntries(PET_STATUSES.map((s) => [s, `${s}.svg`])) as Record<PetStatus, string> },
-    stateFiles: Object.fromEntries(PET_STATUSES.map((s) => [s, join(dir, `${s}.svg`)]))
+    manifest: { id: "default-pixel-dev", name: "Default Pixel Dev", version: "1.0.0", formatVersion: 1, states: {
+      idle: "idle.svg",
+      thinking: "thinking.svg",
+      working: "working.svg",
+      "waiting-approval": "waiting-approval.svg",
+      done: "done.svg",
+      error: "error.svg"
+    } },
+    stateFiles: Object.fromEntries(PET_STATUSES.map((s) => [s, join(dir, legacyDefaultFiles[s])])) as Record<PetStatus, string>,
+    formatVersion: 1,
+    hasAllStandardStates: false
   };
 }
 
@@ -64,10 +95,15 @@ app.whenReady().then(async () => {
   sendSelectedPack();
   showPetWindow(win);
 
+  const localKakaPetPackPath = join(paths.petPacks, "kaka-desktop-pet");
   const diagnostics = () => buildDiagnosticsReport({
     bridgePort,
     selectedPetPackId: selectedPack().manifest.id,
     selectedPetPackValid: selectedPetPackId === selectedPack().manifest.id,
+    selectedPetPackHasAllStandardStates: selectedPack().hasAllStandardStates,
+    localKakaPetPackPath,
+    localKakaPetPackInstalled: existsSync(localKakaPetPackPath),
+    currentState: latestStatus,
     lastUpdateAt: latestStatus.updatedAt,
     lastError: null,
     logs: { app: paths.appLog, mcp: paths.mcpLog }

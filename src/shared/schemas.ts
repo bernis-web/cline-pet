@@ -32,7 +32,7 @@ export const updatePetStatusSchema = z.object({
     visibleStatus: overlayStatus ?? baseStatus,
     baseStatus,
     overlayStatus,
-    normalizedFrom: normalized.normalizedFrom
+    ...(normalized.normalizedFrom ? { normalizedFrom: normalized.normalizedFrom } : {})
   };
 });
 
@@ -68,7 +68,7 @@ const manifestBaseSchema = z.object({
   version: z.string().trim().min(1).default("1.0.0"),
   author: z.string().trim().optional(),
   description: z.string().trim().optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 }).passthrough();
 
 export const petPackManifestSchema = z.union([

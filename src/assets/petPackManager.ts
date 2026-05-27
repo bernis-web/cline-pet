@@ -1,5 +1,5 @@
 ﻿import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { ERROR_CODES } from "../shared/errors.js";
 import { petPackManifestSchema } from "../shared/schemas.js";
 import type { PetPackManifest } from "../shared/schemas.js";
@@ -19,7 +19,7 @@ export type PetPackValidationResult =
 
 function isInsideDir(parentDir: string, childPath: string) {
   const relativePath = relative(resolve(parentDir), resolve(childPath));
-  return relativePath === "" || (!relativePath.startsWith("..") && !resolve(relativePath).startsWith(resolve(relativePath).root));
+  return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
 }
 
 function resolveStateFile(packDir: string, state: string, relativeFile: string) {
