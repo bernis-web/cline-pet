@@ -1,1 +1,21 @@
-<svg>thinking</svg>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" shape-rendering="crispEdges">
+  <rect width="160" height="160" fill="none"/>
+  <ellipse cx="80" cy="140" rx="42" ry="9" fill="#000000" opacity="0.22"/>
+  <rect x="42" y="44" width="76" height="70" rx="18" fill="#a78bfa"/>
+  <rect x="54" y="28" width="52" height="22" rx="10" fill="#a78bfa"/>
+  <rect x="58" y="16" width="10" height="18" rx="4" fill="#f472b6"/>
+  <rect x="92" y="16" width="10" height="18" rx="4" fill="#f472b6"/>
+  <rect x="57" y="65" width="16" height="16" rx="4" fill="#111827"/>
+  <rect x="87" y="65" width="16" height="16" rx="4" fill="#111827"/>
+  <rect x="63" y="68" width="5" height="5" fill="#ffffff"/>
+  <rect x="93" y="68" width="5" height="5" fill="#ffffff"/>
+  <rect x="68" y="96" width="24" height="6" rx="3" fill="#111827" opacity="0.8"/>
+  <rect x="30" y="74" width="14" height="28" rx="7" fill="#f472b6"/>
+  <rect x="116" y="74" width="14" height="28" rx="7" fill="#f472b6"/>
+  <rect x="56" y="114" width="16" height="16" rx="5" fill="#1f2937"/>
+  <rect x="88" y="114" width="16" height="16" rx="5" fill="#1f2937"/>
+  <circle cx="122" cy="42" r="18" fill="#f472b6"/>
+  <text x="122" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">?</text>
+  <rect x="44" y="134" width="72" height="16" rx="8" fill="#111827" opacity="0.78"/>
+  <text x="80" y="146" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#f9fafb">THINK</text>
+</svg>

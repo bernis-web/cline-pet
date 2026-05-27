@@ -61,7 +61,7 @@ app.whenReady().then(async () => {
   const selectedPack = () => packs.find((pack) => pack.manifest.id === selectedPetPackId) ?? packs[0];
   const sendSelectedPack = () => win.webContents.send("pet-pack", { id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
   await win.loadURL(rendererUrl);
-  win.webContents.once("did-finish-load", sendSelectedPack);
+  sendSelectedPack();
   showPetWindow(win);
 
   const diagnostics = () => buildDiagnosticsReport({

@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { PetStatus } from "../../shared/statuses";
 import { DiagnosticsPanel } from "./DiagnosticsPanel";
 import { PetView } from "./PetView";
+import idleImage from "../../assets/default-pet/idle.svg";
+import thinkingImage from "../../assets/default-pet/thinking.svg";
+import workingImage from "../../assets/default-pet/working.svg";
+import waitingApprovalImage from "../../assets/default-pet/waiting-approval.svg";
+import doneImage from "../../assets/default-pet/done.svg";
+import errorImage from "../../assets/default-pet/error.svg";
 
 declare global {
   interface Window {
@@ -13,12 +19,12 @@ declare global {
 }
 
 const defaultImages: Record<PetStatus, string> = {
-  idle: "/src/assets/default-pet/idle.svg",
-  thinking: "/src/assets/default-pet/thinking.svg",
-  working: "/src/assets/default-pet/working.svg",
-  "waiting-approval": "/src/assets/default-pet/waiting-approval.svg",
-  done: "/src/assets/default-pet/done.svg",
-  error: "/src/assets/default-pet/error.svg"
+  idle: idleImage,
+  thinking: thinkingImage,
+  working: workingImage,
+  "waiting-approval": waitingApprovalImage,
+  done: doneImage,
+  error: errorImage
 };
 
 export function App() {
