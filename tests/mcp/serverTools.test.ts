@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { handleUpdatePetStatus } from "../../src/mcp/server";
+﻿import { describe, expect, it } from "vitest";
+import { handleUpdatePetStatus, updatePetStatusInputSchema } from "../../src/mcp/server";
 
 describe("mcp tool handlers", () => {
   it("rejects invalid status", async () => {
@@ -8,8 +8,28 @@ describe("mcp tool handlers", () => {
     if (!result.ok) expect(result.errorCode).toBe("INVALID_STATUS");
   });
 
-  it("sends valid status through injected bridge sender", async () => {
-    const result = await handleUpdatePetStatus({ status: "working", task: "test" }, async () => ({ ok: true, data: { delivered: true } }));
-    expect(result.ok).toBe(true);
+  it("sends normalized legacy status through injected bridge sender", async () => {
+    const result = await handleUpdatePetStatus({ status: "working", task: "test" }, async (payload) => {
+      expect(payload.status).toBe("loading");
+      expect(payload.normalizedFrom).toBe("working");
+      return { ok: true, data: { delivered: true } };
+    });
+    expect(result).toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        delivered: true,
+        status: "loading",
+        visibleStatus: "loading",
+        baseStatus: "loading",
+        overlayStatus: null,
+        normalizedFrom: "working"
+      })
+    });
+  });
+
+  it("publishes a 12-state tool input schema", () => {
+    expect(updatePetStatusInputSchema.properties.status.enum).toContain("signal-weak");
+    expect(updatePetStatusInputSchema.properties.status.enum).toContain("working");
+    expect(updatePetStatusInputSchema.properties.layer.enum).toEqual(["base", "overlay"]);
   });
 });

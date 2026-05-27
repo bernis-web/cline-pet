@@ -1,4 +1,4 @@
-import { AddressInfo } from "node:net";
+﻿import { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { startBridgeServer } from "../../src/bridge/bridgeServer";
 
@@ -40,5 +40,30 @@ describe("bridge server control endpoints", () => {
     const response = await fetch(`http://127.0.0.1:${port}/diagnostics`);
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
+  });
+
+  it("normalizes legacy status payloads before invoking onStatus", async () => {
+    const onStatus = vi.fn();
+    server = startBridgeServer(0, {
+      onStatus,
+      onDiagnostics: () => ({ ok: true })
+    });
+    await new Promise<void>((resolve) => server?.once("listening", resolve));
+    const port = (server.address() as AddressInfo).port;
+
+    const response = await fetch(`http://127.0.0.1:${port}/status`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ status: "done", task: "complete" })
+    });
+
+    expect(response.status).toBe(200);
+    expect(onStatus).toHaveBeenCalledWith(expect.objectContaining({
+      status: "happy",
+      visibleStatus: "happy",
+      baseStatus: "happy",
+      overlayStatus: null,
+      normalizedFrom: "done"
+    }));
   });
 });
