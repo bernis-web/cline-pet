@@ -1,18 +1,37 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+﻿import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import { ERROR_CODES } from "../shared/errors.js";
 import { petPackManifestSchema } from "../shared/schemas.js";
 import type { PetPackManifest } from "../shared/schemas.js";
+import { PET_STATUSES, PET_STATUS_ALIASES, type PetStatus } from "../shared/statuses.js";
 
 export type PetPack = {
   dir: string;
   manifest: PetPackManifest;
-  stateFiles: Record<string, string>;
+  stateFiles: Record<PetStatus, string>;
+  formatVersion: 1 | 2;
+  hasAllStandardStates: boolean;
 };
 
 export type PetPackValidationResult =
   | { ok: true; pack: PetPack }
   | { ok: false; errorCode: typeof ERROR_CODES.INVALID_PET_PACK; message: string };
+
+function isInsideDir(parentDir: string, childPath: string) {
+  const relativePath = relative(resolve(parentDir), resolve(childPath));
+  return relativePath === "" || (!relativePath.startsWith("..") && !resolve(relativePath).startsWith(resolve(relativePath).root));
+}
+
+function resolveStateFile(packDir: string, state: string, relativeFile: string) {
+  const filePath = resolve(packDir, relativeFile);
+  if (!isInsideDir(packDir, filePath)) {
+    return { ok: false as const, message: `state ${state} points outside pack` };
+  }
+  if (!existsSync(filePath)) {
+    return { ok: false as const, message: `state file missing: ${relativeFile}` };
+  }
+  return { ok: true as const, filePath };
+}
 
 export function validatePetPack(packDir: string): PetPackValidationResult {
   const manifestPath = join(packDir, "manifest.json");
@@ -25,19 +44,34 @@ export function validatePetPack(packDir: string): PetPackValidationResult {
     return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: parsed.error.message };
   }
 
-  const stateFiles: Record<string, string> = {};
-  for (const [state, relativeFile] of Object.entries(parsed.data.states) as [string, string][]) {
-    const filePath = resolve(packDir, relativeFile);
-    if (!filePath.startsWith(resolve(packDir))) {
-      return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: `state ${state} points outside pack` };
+  const manifest = parsed.data;
+  const formatVersion = manifest.formatVersion;
+  const stateFiles = {} as Record<PetStatus, string>;
+
+  if (formatVersion === 2) {
+    for (const state of PET_STATUSES) {
+      const relativeFile = manifest.states[state];
+      const resolved = resolveStateFile(packDir, state, relativeFile);
+      if (!resolved.ok) return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: resolved.message };
+      stateFiles[state] = resolved.filePath;
     }
-    if (!existsSync(filePath)) {
-      return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: `state file missing: ${relativeFile}` };
-    }
-    stateFiles[state] = filePath;
+    return { ok: true, pack: { dir: packDir, manifest, stateFiles, formatVersion, hasAllStandardStates: true } };
   }
 
-  return { ok: true, pack: { dir: packDir, manifest: parsed.data, stateFiles } };
+  for (const state of Object.keys(PET_STATUS_ALIASES) as (keyof typeof PET_STATUS_ALIASES)[]) {
+    const relativeFile = manifest.states[state];
+    const resolved = resolveStateFile(packDir, state, relativeFile);
+    if (!resolved.ok) return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: resolved.message };
+    stateFiles[PET_STATUS_ALIASES[state]] = resolved.filePath;
+  }
+  stateFiles.sleepy = stateFiles.idle;
+  stateFiles.angry = stateFiles["not-found"];
+  stateFiles.sleeping = stateFiles.idle;
+  stateFiles["head-pat"] = stateFiles.happy;
+  stateFiles.dragging = stateFiles.loading;
+  stateFiles["signal-weak"] = stateFiles["not-found"];
+
+  return { ok: true, pack: { dir: packDir, manifest, stateFiles, formatVersion, hasAllStandardStates: false } };
 }
 
 export function discoverPetPacks(rootDir: string): PetPack[] {
