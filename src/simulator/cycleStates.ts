@@ -1,6 +1,11 @@
-﻿import { PET_STATUSES } from "../shared/statuses.js";
+﻿import { pathToFileURL } from "node:url";
+import { PET_STATUSES } from "../shared/statuses.js";
 
 export const SIMULATOR_STATUSES = [...PET_STATUSES];
+
+export function isCliEntryPoint(moduleUrl: string, entryPath = process.argv[1]) {
+  return Boolean(entryPath) && moduleUrl === pathToFileURL(entryPath).href;
+}
 
 export async function runCycleStates() {
   const port = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
@@ -12,6 +17,6 @@ export async function runCycleStates() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntryPoint(import.meta.url)) {
   await runCycleStates();
 }
