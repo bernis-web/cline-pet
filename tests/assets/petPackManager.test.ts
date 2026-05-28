@@ -63,6 +63,27 @@ describe("pet pack manager", () => {
     }
   });
 
+  it("accepts a v2 manifest saved with a UTF-8 BOM", () => {
+    const root = mkdtempSync(join(tmpdir(), "pet-pack-"));
+    const packDir = writeV2Pack(root, "bom-kaka");
+    const manifestText = JSON.stringify({
+      id: "bom-kaka",
+      name: "BOM Kaka",
+      version: "1.0.0",
+      formatVersion: 2,
+      states: Object.fromEntries(PET_STATUSES.map((state) => [state, `${state}.png`]))
+    }, null, 2);
+
+    writeFileSync(join(packDir, "manifest.json"), `\uFEFF${manifestText}`);
+
+    const result = validatePetPack(packDir);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.pack.manifest.id).toBe("bom-kaka");
+      expect(result.pack.formatVersion).toBe(2);
+    }
+  });
+
   it("rejects a v2 pack with a missing state file", () => {
     const root = mkdtempSync(join(tmpdir(), "pet-pack-"));
     const packDir = writeV2Pack(root, "broken-kaka", "signal-weak");

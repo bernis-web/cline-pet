@@ -39,7 +39,8 @@ export function validatePetPack(packDir: string): PetPackValidationResult {
     return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: "manifest.json is missing" };
   }
 
-  const parsed = petPackManifestSchema.safeParse(JSON.parse(readFileSync(manifestPath, "utf8")));
+  const manifestText = readFileSync(manifestPath, "utf8").replace(/^\uFEFF/, "");
+  const parsed = petPackManifestSchema.safeParse(JSON.parse(manifestText));
   if (!parsed.success) {
     return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: parsed.error.message };
   }
