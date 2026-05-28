@@ -93,4 +93,36 @@ describe("renderer App", () => {
     expect(document.querySelector(".speech-bubble")?.textContent).toContain("正在分析项目");
     expect(document.querySelector(".bubble-panel")).toBeNull();
   });
+
+  it("applies motion class for visible status", async () => {
+    let statusHandler: ((payload: any) => void) | null = null;
+    (window as any).clinePet = {
+      onPetStatus: vi.fn((callback) => {
+        statusHandler = callback;
+      }),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") })
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+    });
+
+    await act(async () => {
+      statusHandler?.({
+        status: "happy",
+        visibleStatus: "happy",
+        baseStatus: "happy",
+        overlayStatus: null,
+        task: "完成啦",
+        updatedAt: "2026-05-28T00:00:00.000Z"
+      });
+    });
+
+    expect(document.querySelector("img")?.className).toContain("pet-motion-happy");
+  });
 });

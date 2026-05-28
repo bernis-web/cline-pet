@@ -20,7 +20,7 @@ export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onDia
     <main className="pet-shell">
       <SpeechBubble message={bubble} />
       <section className="drag-region pet-stage" onDoubleClick={onStartChat}>
-        <img className="pet-image" src={imageSrc} alt={toStatusLabel(status)} draggable={false} />
+        <img className={`pet-image pet-motion-${status}`} src={imageSrc} alt={toStatusLabel(status)} draggable={false} />
       </section>
       <ChatInput open={chatOpen} pending={chatPending} onSubmit={onChatSubmit} onCancel={onChatCancel} />
       <button className="diagnose-button" type="button" onClick={onDiagnose} aria-label="诊断">

@@ -160,3 +160,56 @@ body,
   background: #fbbf24;
   color: #111827;
 }
+
+.pet-motion-idle,
+.pet-motion-sleepy,
+.pet-motion-sleeping {
+  animation: pet-float 2.8s ease-in-out infinite;
+}
+
+.pet-motion-thinking {
+  animation: pet-pulse 1.6s ease-in-out infinite;
+}
+
+.pet-motion-happy,
+.pet-motion-head-pat {
+  animation: pet-bounce 0.9s ease-in-out infinite;
+}
+
+.pet-motion-loading,
+.pet-motion-dragging {
+  animation: pet-wiggle 0.8s ease-in-out infinite;
+}
+
+.pet-motion-not-found,
+.pet-motion-signal-weak,
+.pet-motion-angry {
+  animation: pet-shake 0.55s ease-in-out infinite;
+}
+
+@keyframes pet-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pet-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.35)); }
+  50% { transform: scale(1.035); filter: drop-shadow(0 16px 28px rgba(96, 165, 250, 0.45)); }
+}
+
+@keyframes pet-bounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-9px); }
+}
+
+@keyframes pet-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+@keyframes pet-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
