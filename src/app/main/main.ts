@@ -10,6 +10,8 @@ import { writeLog } from "../../shared/logger.js";
 import type { UpdatePetStatusInput } from "../../shared/schemas.js";
 import { PET_STATUSES, type PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
+import { createChatReply } from "./chatService.js";
+import { loadDeepSeekConfig } from "./config.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
 import { createTray, openPath } from "./tray.js";
 
@@ -94,6 +96,14 @@ app.whenReady().then(async () => {
   const currentPetPackPayload = () => ({ id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
   const sendSelectedPack = () => win.webContents.send("pet-pack", currentPetPackPayload());
   ipcMain.handle("get-pet-pack", () => currentPetPackPayload());
+  ipcMain.handle("chat:send", async (_event, payload: { text?: string }) => {
+    const config = loadDeepSeekConfig(paths.root);
+    if (!config.ok) return { ok: false, errorCode: config.errorCode, message: config.message };
+
+    const result = await createChatReply({ text: payload.text ?? "", config: config.data });
+    if (!result.ok) return { ok: false, errorCode: result.errorCode, message: result.message };
+    return { ok: true, text: result.data.text };
+  });
   await win.loadURL(rendererUrl);
   sendSelectedPack();
   showPetWindow(win);
