@@ -2,6 +2,7 @@
 import { PetStatus } from "../../shared/statuses";
 import { DiagnosticsPanel } from "./DiagnosticsPanel";
 import { PetView } from "./PetView";
+import { bubbleFromDiagnostics, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
 import idleImage from "../../assets/default-pet/idle.svg";
 import thinkingImage from "../../assets/default-pet/thinking.svg";
 import workingImage from "../../assets/default-pet/working.svg";
@@ -37,19 +38,18 @@ const defaultImages: Record<PetStatus, string> = {
 export function App() {
   const [status, setStatus] = useState<PetStatus>("idle");
   const [visibleStatus, setVisibleStatus] = useState<PetStatus>("idle");
-  const [task, setTask] = useState("");
-  const [updatedAt, setUpdatedAt] = useState("");
+  const [bubble, setBubble] = useState<BubbleMessage | null>(null);
   const [diagnostics, setDiagnostics] = useState("");
   const [images, setImages] = useState(defaultImages);
   useEffect(() => {
     window.clinePet?.onPetStatus((payload) => {
       setStatus(payload.status);
       setVisibleStatus(payload.visibleStatus ?? payload.status);
-      setTask(payload.task ?? "");
-      setUpdatedAt(payload.updatedAt ?? "");
+      const nextBubble = bubbleFromStatus(payload);
+      if (nextBubble) setBubble(nextBubble);
     });
     window.clinePet?.onPetPack((payload) => setImages({ ...defaultImages, ...payload.stateImages }));
     window.clinePet?.getPetPack?.().then((payload) => setImages({ ...defaultImages, ...payload.stateImages })).catch(() => undefined);
   }, []);
-  return <><PetView status={visibleStatus} task={task} updatedAt={updatedAt} imageSrc={images[visibleStatus] ?? defaultImages.idle} onDiagnose={() => setDiagnostics(`status=${status}\nvisibleStatus=${visibleStatus}\ntask=${task}\nupdatedAt=${updatedAt}`)}/><DiagnosticsPanel text={diagnostics} onClose={() => setDiagnostics("")}/></>;
+  return <><PetView status={visibleStatus} imageSrc={images[visibleStatus] ?? defaultImages.idle} bubble={bubble} onStartChat={() => setBubble({ id: `notice-${Date.now()}`, kind: "notice", text: "聊天输入会在下一步接入。", createdAt: new Date().toISOString(), autoHideMs: 3000 })} onDiagnose={() => { const text = `status=${status}\nvisibleStatus=${visibleStatus}`; setDiagnostics(text); setBubble(bubbleFromDiagnostics("诊断信息已打开。")); }}/><DiagnosticsPanel text={diagnostics} onClose={() => setDiagnostics("")}/></>;
 }

@@ -60,4 +60,37 @@ describe("renderer App", () => {
     expect(getPetPack).toHaveBeenCalledWith("get-pet-pack");
     expect(document.querySelector("img")?.getAttribute("src")).toBe("file:///kaka/idle.png");
   });
+
+  it("shows status task text in a speech bubble instead of a fixed bottom panel", async () => {
+    let statusHandler: ((payload: any) => void) | null = null;
+    (window as any).clinePet = {
+      onPetStatus: vi.fn((callback) => {
+        statusHandler = callback;
+      }),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") })
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+    });
+
+    await act(async () => {
+      statusHandler?.({
+        status: "thinking",
+        visibleStatus: "thinking",
+        baseStatus: "thinking",
+        overlayStatus: null,
+        task: "正在分析项目",
+        updatedAt: "2026-05-28T00:00:00.000Z"
+      });
+    });
+
+    expect(document.querySelector(".speech-bubble")?.textContent).toContain("正在分析项目");
+    expect(document.querySelector(".bubble-panel")).toBeNull();
+  });
 });
