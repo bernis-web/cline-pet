@@ -7,7 +7,9 @@
 ## 功能特性
 
 - Windows 11 透明、置顶、无边框桌宠窗口
-- 宠物优先布局：像素宠物在上，底部气泡面板显示状态
+- 宠物优先布局：像素宠物在中央，需要时通过对话气泡显示状态和提醒
+- 支持临时聊天输入框与 DeepSeek 聊天回复气泡
+- 轻量状态动效：idle 浮动、thinking 呼吸、happy 弹跳、loading 摇摆、error/signal 抖动
 - 12 个状态：idle、happy、sleepy、thinking、angry、not-found、message、sleeping、head-pat、dragging、loading、signal-weak
 - MCP 工具：update_pet_status、pet_status_check
 - 本地 HTTP Bridge：MCP Server 通过本地接口把状态送到 Electron App
@@ -101,7 +103,7 @@ npm run dev:electron
 npm run simulate
 ```
 
-它会依次发送 12 个状态给桌宠，方便检查动画/面板变化。
+它会依次发送 12 个状态给桌宠，方便检查动画/气泡变化。
 
 ## MCP 使用思路
 
@@ -124,6 +126,42 @@ Cline 侧应该在任务关键阶段调用：
 ```powershell
 ./scripts/install-global-rule.ps1
 ```
+
+## DeepSeek 聊天配置
+
+桌宠支持通过你自己的 DeepSeek API key 和卡卡聊天。API key 只保存在本机，不会提交到仓库，也不会通过 MCP/Bridge 发送。
+
+推荐创建本地配置文件：
+
+```text
+%APPDATA%/cline-desktop-pet/config.json
+```
+
+示例：
+
+```json
+{
+  "deepseekApiKey": "你的 DeepSeek API key",
+  "deepseekBaseUrl": "https://api.deepseek.com",
+  "deepseekModel": "deepseek-chat"
+}
+```
+
+也可以使用环境变量：
+
+```powershell
+setx CLINE_PET_DEEPSEEK_API_KEY "你的 DeepSeek API key"
+setx CLINE_PET_DEEPSEEK_BASE_URL "https://api.deepseek.com"
+setx CLINE_PET_DEEPSEEK_MODEL "deepseek-chat"
+```
+
+重启桌宠后生效。
+
+## 使用方式补充
+
+- 双击卡卡可以打开临时聊天输入框。
+- Cline 工作状态会以气泡方式提醒，不再常驻底部面板。
+- DeepSeek 回复也会通过气泡显示在卡卡附近。
 
 ## 更换像素宠物形象
 
@@ -204,3 +242,5 @@ npm run dev:electron
 ## 当前仓库
 
 https://github.com/bernis-web/cline-pet
+
+
