@@ -72,6 +72,14 @@ npm run dev:mcp
 
 这个命令用于让 Cline 通过 MCP 工具调用桌宠。实际使用时，还需要把该 MCP Server 配到你的 Cline MCP 配置里。
 
+推荐直接运行一键接入脚本，它会安装全局状态规则，并把 `cline-desktop-pet` MCP Server 写入 Cline MCP 配置：
+
+```powershell
+./scripts/install-cline-status-integration.ps1
+```
+
+运行后请重载 VS Code/Cline，让新的 MCP Server 和全局规则生效。
+
 ## 验证项目是否正常
 
 ```powershell
@@ -126,6 +134,8 @@ Cline 侧应该在任务关键阶段调用：
 ```
 
 formatVersion 2 资源包应包含 `manifest.json` 和 12 个状态图片；旧 formatVersion 1 六状态资源包也会被映射为兼容 fallback。资源包格式详见：docs/pet-pack-format.md
+
+如果本机已经安装 `kaka-desktop-pet`，且还没有保存过其他宠物选择，应用会默认使用卡卡形象；如果你在托盘里手动选择了其他宠物，手动选择会继续优先。
 
 放入资源包后，在托盘菜单里点击：
 
