@@ -1,6 +1,7 @@
 ﻿import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { pathToFileURL } from "node:url";
 import { sendStatusToBridge } from "../bridge/bridgeClient.js";
 import { ERROR_CODES, fail, ok } from "../shared/errors.js";
 import type { ToolResult } from "../shared/errors.js";
@@ -8,6 +9,10 @@ import { updatePetStatusSchema } from "../shared/schemas.js";
 import { LEGACY_PET_STATUSES, PET_STATUSES } from "../shared/statuses.js";
 
 const bridgePort = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
+
+export function isCliEntryPoint(moduleUrl: string, entryPath = process.argv[1]) {
+  return Boolean(entryPath) && moduleUrl === pathToFileURL(entryPath).href;
+}
 
 export const updatePetStatusInputSchema = {
   type: "object",
@@ -77,7 +82,7 @@ export async function startMcpServer() {
   await server.connect(new StdioServerTransport());
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntryPoint(import.meta.url)) {
   startMcpServer().catch((error) => {
     console.error(error);
     process.exit(1);

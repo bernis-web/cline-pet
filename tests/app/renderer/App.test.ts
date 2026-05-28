@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../../src/app/renderer/App";
 import { PET_STATUSES, type PetStatus } from "../../../src/shared/statuses";
+import { createRendererPetBridge } from "../../../src/app/renderer/petBridge";
 
 function imageMap(prefix: string) {
   return Object.fromEntries(PET_STATUSES.map((status) => [status, `${prefix}/${status}.png`])) as Record<PetStatus, string>;
@@ -35,6 +36,28 @@ describe("renderer App", () => {
     });
 
     expect(getPetPack).toHaveBeenCalledOnce();
+    expect(document.querySelector("img")?.getAttribute("src")).toBe("file:///kaka/idle.png");
+  });
+
+  it("loads the current pet pack through the bridge exposed by preload", async () => {
+    const getPetPack = vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") });
+    (window as any).clinePet = createRendererPetBridge({
+      on: vi.fn(),
+      invoke: getPetPack
+    });
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(getPetPack).toHaveBeenCalledWith("get-pet-pack");
     expect(document.querySelector("img")?.getAttribute("src")).toBe("file:///kaka/idle.png");
   });
 });

@@ -1,5 +1,7 @@
 ﻿import { describe, expect, it } from "vitest";
-import { handleUpdatePetStatus, updatePetStatusInputSchema } from "../../src/mcp/server";
+import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
+import { handleUpdatePetStatus, isCliEntryPoint, updatePetStatusInputSchema } from "../../src/mcp/server";
 
 describe("mcp tool handlers", () => {
   it("rejects invalid status", async () => {
@@ -31,5 +33,11 @@ describe("mcp tool handlers", () => {
     expect(updatePetStatusInputSchema.properties.status.enum).toContain("signal-weak");
     expect(updatePetStatusInputSchema.properties.status.enum).toContain("working");
     expect(updatePetStatusInputSchema.properties.layer.enum).toEqual(["base", "overlay"]);
+  });
+
+  it("detects tsx CLI execution from a platform file URL", () => {
+    const scriptPath = resolve("src/mcp/server.ts");
+
+    expect(isCliEntryPoint(pathToFileURL(scriptPath).href, scriptPath)).toBe(true);
   });
 });

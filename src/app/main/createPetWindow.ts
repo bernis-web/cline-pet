@@ -18,7 +18,7 @@ export function createPetWindow() {
     alwaysOnTop: true,
     resizable: false,
     hasShadow: false,
-    webPreferences: { preload: join(currentDir, "preload.js"), contextIsolation: true, nodeIntegration: false }
+    webPreferences: { preload: join(currentDir, "preload.cjs"), contextIsolation: true, nodeIntegration: false }
   });
   win.setAlwaysOnTop(true, "floating");
   return win;
