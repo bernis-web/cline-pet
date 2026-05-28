@@ -14,5 +14,8 @@ contextBridge.exposeInMainWorld("clinePet", {
   },
   onPetPack(callback: (payload: RendererPetPack) => void) {
     ipcRenderer.on("pet-pack", (_event, payload) => callback(payload));
+  },
+  getPetPack() {
+    return ipcRenderer.invoke("get-pet-pack") as Promise<RendererPetPack>;
   }
 });

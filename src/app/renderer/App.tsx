@@ -14,6 +14,7 @@ declare global {
     clinePet?: {
       onPetStatus(callback: (payload: { status: PetStatus; visibleStatus: PetStatus; baseStatus: PetStatus; overlayStatus: PetStatus | null; task?: string; updatedAt?: string; normalizedFrom?: string }) => void): void;
       onPetPack(callback: (payload: { stateImages: Record<PetStatus, string> }) => void): void;
+      getPetPack?(): Promise<{ stateImages: Record<PetStatus, string> }>;
     };
   }
 }
@@ -48,6 +49,7 @@ export function App() {
       setUpdatedAt(payload.updatedAt ?? "");
     });
     window.clinePet?.onPetPack((payload) => setImages({ ...defaultImages, ...payload.stateImages }));
+    window.clinePet?.getPetPack?.().then((payload) => setImages({ ...defaultImages, ...payload.stateImages })).catch(() => undefined);
   }, []);
   return <><PetView status={visibleStatus} task={task} updatedAt={updatedAt} imageSrc={images[visibleStatus] ?? defaultImages.idle} onDiagnose={() => setDiagnostics(`status=${status}\nvisibleStatus=${visibleStatus}\ntask=${task}\nupdatedAt=${updatedAt}`)}/><DiagnosticsPanel text={diagnostics} onClose={() => setDiagnostics("")}/></>;
 }

@@ -1,0 +1,40 @@
+// @vitest-environment jsdom
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { App } from "../../../src/app/renderer/App";
+import { PET_STATUSES, type PetStatus } from "../../../src/shared/statuses";
+
+function imageMap(prefix: string) {
+  return Object.fromEntries(PET_STATUSES.map((status) => [status, `${prefix}/${status}.png`])) as Record<PetStatus, string>;
+}
+
+describe("renderer App", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+    delete (window as any).clinePet;
+  });
+
+  it("loads the current pet pack on mount even if the initial IPC event was missed", async () => {
+    const getPetPack = vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") });
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(getPetPack).toHaveBeenCalledOnce();
+    expect(document.querySelector("img")?.getAttribute("src")).toBe("file:///kaka/idle.png");
+  });
+});

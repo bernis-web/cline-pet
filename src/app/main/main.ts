@@ -1,4 +1,4 @@
-﻿import { app } from "electron";
+﻿import { app, ipcMain } from "electron";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -91,7 +91,9 @@ app.whenReady().then(async () => {
   let packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)];
   let selectedPetPackId = chooseInitialPetPackId(loadSelectedId(paths.stateFile), packs.map((pack) => pack.manifest.id));
   const selectedPack = () => packs.find((pack) => pack.manifest.id === selectedPetPackId) ?? packs[0];
-  const sendSelectedPack = () => win.webContents.send("pet-pack", { id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
+  const currentPetPackPayload = () => ({ id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
+  const sendSelectedPack = () => win.webContents.send("pet-pack", currentPetPackPayload());
+  ipcMain.handle("get-pet-pack", () => currentPetPackPayload());
   await win.loadURL(rendererUrl);
   sendSelectedPack();
   showPetWindow(win);
