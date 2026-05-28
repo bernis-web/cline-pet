@@ -10,6 +10,7 @@ import { writeLog } from "../../shared/logger.js";
 import type { UpdatePetStatusInput } from "../../shared/schemas.js";
 import { PET_STATUSES, type PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
+import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
 import { createTray, openPath } from "./tray.js";
 
 const bridgePort = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
@@ -60,8 +61,8 @@ function defaultPack(): PetPack {
 }
 
 function loadSelectedId(stateFile: string) {
-  if (!existsSync(stateFile)) return "default-pixel-dev";
-  try { return JSON.parse(readFileSync(stateFile, "utf8")).selectedPetPackId ?? "default-pixel-dev"; } catch { return "default-pixel-dev"; }
+  if (!existsSync(stateFile)) return null;
+  try { return JSON.parse(readFileSync(stateFile, "utf8")).selectedPetPackId ?? null; } catch { return null; }
 }
 
 function saveSelectedId(stateFile: string, selectedPetPackId: string) {
@@ -88,7 +89,7 @@ app.whenReady().then(async () => {
   win.on("closed", () => writeLog(paths.appLog, "info", "window closed"));
   const rendererUrl = process.env.VITE_DEV_SERVER_URL ?? `file://${join(process.cwd(), "dist/app/renderer/index.html")}`;
   let packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)];
-  let selectedPetPackId = loadSelectedId(paths.stateFile);
+  let selectedPetPackId = chooseInitialPetPackId(loadSelectedId(paths.stateFile), packs.map((pack) => pack.manifest.id));
   const selectedPack = () => packs.find((pack) => pack.manifest.id === selectedPetPackId) ?? packs[0];
   const sendSelectedPack = () => win.webContents.send("pet-pack", { id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
   await win.loadURL(rendererUrl);
@@ -124,7 +125,7 @@ app.whenReady().then(async () => {
     runDiagnostics: async () => formatDebugReport(diagnostics()),
     openLogs: () => openPath(paths.logs),
     openPetPacksFolder: () => openPath(paths.petPacks),
-    refreshPetPacks: () => { packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)]; sendSelectedPack(); },
+    refreshPetPacks: () => { packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)]; selectedPetPackId = chooseInitialPetPackId(selectedPetPackId === DEFAULT_PET_PACK_ID ? null : selectedPetPackId, packs.map((pack) => pack.manifest.id)); sendSelectedPack(); },
     getPetPacks: () => packs.map((pack) => ({ id: pack.manifest.id, name: pack.manifest.name })),
     getSelectedPetPackId: () => selectedPack().manifest.id,
     selectPetPack: (id) => { selectedPetPackId = id; saveSelectedId(paths.stateFile, id); sendSelectedPack(); }
