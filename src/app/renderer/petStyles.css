@@ -1,1 +1,128 @@
-html,body,#root{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:system-ui,sans-serif}.pet-shell{width:300px;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}.drag-region{-webkit-app-region:drag}.pet-stage{flex:1;display:flex;align-items:flex-end;justify-content:center;width:100%}.pet-image{width:150px;height:150px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 16px 24px rgba(0,0,0,.35))}.bubble-panel{width:240px;padding:10px 12px;border-radius:18px;color:#e5e7eb;background:rgba(17,24,39,.82);border:1px solid rgba(148,163,184,.35);box-shadow:0 18px 40px rgba(0,0,0,.28);display:grid;gap:3px;font-size:12px}.bubble-panel button{-webkit-app-region:no-drag;margin-top:4px;border:0;border-radius:10px;padding:5px 8px;color:#111827;background:#fbbf24;cursor:pointer}.diagnostics{position:absolute;inset:12px;padding:10px;border-radius:12px;background:rgba(15,23,42,.92);color:#e5e7eb;font-size:11px}.diagnostics button{float:right}.diagnostics pre{white-space:pre-wrap}
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+
+.pet-shell {
+  width: 300px;
+  height: 260px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.pet-stage {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  padding-bottom: 18px;
+}
+
+.pet-image {
+  width: 150px;
+  height: 150px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.35));
+}
+
+.speech-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 178px;
+  max-width: 250px;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border-radius: 18px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(251, 191, 36, 0.75);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: bubble-pop 160ms ease-out;
+  -webkit-app-region: no-drag;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  transform: translateX(-50%) rotate(45deg);
+  background: rgba(255, 255, 255, 0.94);
+  border-right: 1px solid rgba(251, 191, 36, 0.75);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.75);
+}
+
+.speech-bubble[data-kind="notice"] {
+  border-color: rgba(248, 113, 113, 0.8);
+}
+
+.speech-bubble[data-kind="chat"] {
+  border-color: rgba(96, 165, 250, 0.8);
+}
+
+.speech-bubble-text {
+  position: relative;
+  z-index: 1;
+}
+
+.diagnose-button {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #111827;
+  background: rgba(251, 191, 36, 0.92);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.diagnostics {
+  position: absolute;
+  inset: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e5e7eb;
+  font-size: 11px;
+}
+
+.diagnostics button {
+  float: right;
+}
+
+.diagnostics pre {
+  white-space: pre-wrap;
+}
+
+@keyframes bubble-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
