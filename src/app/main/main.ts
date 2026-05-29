@@ -1,6 +1,6 @@
 ﻿import { app, ipcMain } from "electron";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { startBridgeServer } from "../../bridge/bridgeServer.js";
 import { buildDiagnosticsReport, formatDebugReport } from "../../diagnostics/diagnostics.js";
@@ -12,7 +12,10 @@ import { PET_STATUSES, type PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
 import { createChatReply } from "./chatService.js";
 import { loadDeepSeekConfig } from "./config.js";
+import { loadRelationshipMemory } from "./memory/relationshipStore.js";
+import { deriveMoodState } from "./moodEngine.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
+import { maybeCreatePresencePulse } from "./presenceService.js";
 import { createTray, openPath } from "./tray.js";
 
 const bridgePort = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
@@ -80,8 +83,14 @@ function showPetWindow(win: Electron.BrowserWindow) {
   win.moveTop();
 }
 
+function notifyRenderer(win: Electron.BrowserWindow, payload: UpdatePetStatusInput) {
+  latestStatus = { ...payload, updatedAt: payload.updatedAt ?? new Date().toISOString() };
+  win.webContents.send("pet-status", latestStatus);
+}
+
 app.whenReady().then(async () => {
   const paths = getPaths();
+  const appDataBaseDir = dirname(paths.root);
   mkdirSync(paths.logs, { recursive: true });
   mkdirSync(paths.petPacks, { recursive: true });
   writeLog(paths.appLog, "info", "app ready", { bridgePort, cwd: process.cwd() });
@@ -108,6 +117,32 @@ app.whenReady().then(async () => {
   sendSelectedPack();
   showPetWindow(win);
 
+  let lastPresenceAt: string | undefined;
+  const presenceInterval = setInterval(() => {
+    const now = new Date().toISOString();
+    const mood = deriveMoodState({
+      now,
+      relationship: loadRelationshipMemory(appDataBaseDir),
+      hasRecentChat: false,
+      lastChatSentiment: "neutral",
+      memoryHitCount: 0,
+      clineVisibleStatus: latestStatus.visibleStatus
+    });
+
+    const pulse = maybeCreatePresencePulse({
+      now,
+      lastPresenceAt,
+      latestVisibleStatus: latestStatus.visibleStatus,
+      mood: mood.name
+    });
+
+    if (pulse) {
+      lastPresenceAt = pulse.updatedAt;
+      notifyRenderer(win, pulse);
+    }
+  }, 60_000);
+  presenceInterval.unref?.();
+
   const localKakaPetPackPath = join(paths.petPacks, "kaka-desktop-pet");
   const diagnostics = () => buildDiagnosticsReport({
     bridgePort,
@@ -124,8 +159,7 @@ app.whenReady().then(async () => {
 
   startBridgeServer(bridgePort, {
     onStatus(payload) {
-      latestStatus = { ...payload, updatedAt: payload.updatedAt ?? new Date().toISOString() };
-      win.webContents.send("pet-status", latestStatus);
+      notifyRenderer(win, payload);
     },
     onDiagnostics: diagnostics,
     onShow: () => showPetWindow(win),
