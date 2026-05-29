@@ -5,12 +5,17 @@ import { petPackManifestSchema } from "../shared/schemas.js";
 import type { PetPackManifest } from "../shared/schemas.js";
 import { PET_STATUSES, PET_STATUS_ALIASES, type PetStatus } from "../shared/statuses.js";
 
+export type PetPackVariants = Partial<Record<PetStatus, string[]>>;
+export type PetPackActionSets = Record<string, PetStatus[]>;
+
 export type PetPack = {
   dir: string;
   manifest: PetPackManifest;
   stateFiles: Record<PetStatus, string>;
-  formatVersion: 1 | 2;
+  formatVersion: 1 | 2 | 3;
   hasAllStandardStates: boolean;
+  variants?: PetPackVariants;
+  actionSets?: PetPackActionSets;
 };
 
 export type PetPackValidationResult =
@@ -33,6 +38,26 @@ function resolveStateFile(packDir: string, state: string, relativeFile: string) 
   return { ok: true as const, filePath };
 }
 
+function resolveVariants(packDir: string, variants: Partial<Record<PetStatus, string[]>> | undefined) {
+  if (!variants) {
+    return { ok: true as const, variants: undefined };
+  }
+
+  const resolvedVariants: PetPackVariants = {};
+
+  for (const [status, files] of Object.entries(variants) as [PetStatus, string[]][]) {
+    const resolvedFiles: string[] = [];
+    for (const relativeFile of files) {
+      const resolved = resolveStateFile(packDir, `${status} variant`, relativeFile);
+      if (!resolved.ok) return resolved;
+      resolvedFiles.push(resolved.filePath);
+    }
+    resolvedVariants[status] = resolvedFiles;
+  }
+
+  return { ok: true as const, variants: resolvedVariants };
+}
+
 export function validatePetPack(packDir: string): PetPackValidationResult {
   const manifestPath = join(packDir, "manifest.json");
   if (!existsSync(manifestPath)) {
@@ -49,14 +74,31 @@ export function validatePetPack(packDir: string): PetPackValidationResult {
   const formatVersion = manifest.formatVersion;
   const stateFiles = {} as Record<PetStatus, string>;
 
-  if (formatVersion === 2) {
+  if (formatVersion === 2 || formatVersion === 3) {
     for (const state of PET_STATUSES) {
       const relativeFile = manifest.states[state];
       const resolved = resolveStateFile(packDir, state, relativeFile);
       if (!resolved.ok) return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: resolved.message };
       stateFiles[state] = resolved.filePath;
     }
-    return { ok: true, pack: { dir: packDir, manifest, stateFiles, formatVersion, hasAllStandardStates: true } };
+
+    const variants = formatVersion === 3 ? resolveVariants(packDir, manifest.variants) : { ok: true as const, variants: undefined };
+    if (!variants.ok) {
+      return { ok: false, errorCode: ERROR_CODES.INVALID_PET_PACK, message: variants.message };
+    }
+
+    return {
+      ok: true,
+      pack: {
+        dir: packDir,
+        manifest,
+        stateFiles,
+        formatVersion,
+        hasAllStandardStates: true,
+        ...(variants.variants ? { variants: variants.variants } : {}),
+        ...(formatVersion === 3 && manifest.actionSets ? { actionSets: manifest.actionSets } : {})
+      }
+    };
   }
 
   for (const state of Object.keys(PET_STATUS_ALIASES) as (keyof typeof PET_STATUS_ALIASES)[]) {

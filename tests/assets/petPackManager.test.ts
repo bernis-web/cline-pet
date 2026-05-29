@@ -36,6 +36,24 @@ function writeV2Pack(root: string, id: string, missingState?: string) {
   return packDir;
 }
 
+function writeV3Pack(root: string, id: string) {
+  const packDir = join(root, id);
+  mkdirSync(packDir, { recursive: true });
+  for (const file of [...PET_STATUSES.map((state) => `${state}.png`), "idle-soft.png"]) {
+    writeFileSync(join(packDir, file), `png:${file}`);
+  }
+  writeFileSync(join(packDir, "manifest.json"), JSON.stringify({
+    id,
+    name: "Kaka v3",
+    version: "1.0.0",
+    formatVersion: 3,
+    states: Object.fromEntries(PET_STATUSES.map((state) => [state, `${state}.png`])),
+    variants: { idle: ["idle-soft.png"] },
+    actionSets: { greeting: ["message", "happy"] }
+  }, null, 2));
+  return packDir;
+}
+
 describe("pet pack manager", () => {
   it("validates a complete legacy pack", () => {
     const root = mkdtempSync(join(tmpdir(), "pet-pack-"));
@@ -81,6 +99,22 @@ describe("pet pack manager", () => {
     if (result.ok) {
       expect(result.pack.manifest.id).toBe("bom-kaka");
       expect(result.pack.formatVersion).toBe(2);
+    }
+  });
+
+  it("accepts formatVersion 3 packs with optional variants and actionSets", () => {
+    const root = mkdtempSync(join(tmpdir(), "pet-pack-"));
+    const packDir = writeV3Pack(root, "kaka-v3");
+    const result = validatePetPack(packDir);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.pack.formatVersion).toBe(3);
+      expect(result.pack.manifest).toMatchObject({
+        formatVersion: 3,
+        variants: { idle: ["idle-soft.png"] },
+        actionSets: { greeting: ["message", "happy"] }
+      });
     }
   });
 

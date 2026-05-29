@@ -62,6 +62,23 @@ const v2StatesSchema = z.object({
   "signal-weak": z.string().trim().min(1)
 }).passthrough();
 
+const v3VariantsSchema = z.object({
+  idle: z.array(z.string().trim().min(1)),
+  happy: z.array(z.string().trim().min(1)),
+  sleepy: z.array(z.string().trim().min(1)),
+  thinking: z.array(z.string().trim().min(1)),
+  angry: z.array(z.string().trim().min(1)),
+  "not-found": z.array(z.string().trim().min(1)),
+  message: z.array(z.string().trim().min(1)),
+  sleeping: z.array(z.string().trim().min(1)),
+  "head-pat": z.array(z.string().trim().min(1)),
+  dragging: z.array(z.string().trim().min(1)),
+  loading: z.array(z.string().trim().min(1)),
+  "signal-weak": z.array(z.string().trim().min(1))
+}).partial();
+
+const v3ActionSetsSchema = z.record(z.string().trim().min(1), z.array(z.enum(PET_STATUSES)).min(1));
+
 const manifestBaseSchema = z.object({
   id: z.string().regex(/^[a-zA-Z0-9_-]+$/),
   name: z.string().trim().min(1),
@@ -72,6 +89,12 @@ const manifestBaseSchema = z.object({
 }).passthrough();
 
 export const petPackManifestSchema = z.union([
+  manifestBaseSchema.extend({
+    formatVersion: z.literal(3),
+    states: v2StatesSchema,
+    variants: v3VariantsSchema.optional(),
+    actionSets: v3ActionSetsSchema.optional()
+  }),
   manifestBaseSchema.extend({
     formatVersion: z.literal(2),
     states: v2StatesSchema
