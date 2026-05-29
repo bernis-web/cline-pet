@@ -81,6 +81,21 @@ describe("pet pack manager", () => {
     }
   });
 
+  it("keeps formatVersion 2 packs compatible after v3 support is added", () => {
+    const root = mkdtempSync(join(tmpdir(), "pet-pack-"));
+    const packDir = writeV2Pack(root, "still-v2");
+    const result = validatePetPack(packDir);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.pack.formatVersion).toBe(2);
+      expect(result.pack.hasAllStandardStates).toBe(true);
+      expect(result.pack.variants).toBeUndefined();
+      expect(result.pack.actionSets).toBeUndefined();
+      expect(result.pack.stateFiles.idle).toContain("idle.png");
+    }
+  });
+
   it("accepts a v2 manifest saved with a UTF-8 BOM", () => {
     const root = mkdtempSync(join(tmpdir(), "pet-pack-"));
     const packDir = writeV2Pack(root, "bom-kaka");
