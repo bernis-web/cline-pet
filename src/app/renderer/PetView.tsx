@@ -29,13 +29,14 @@ export type PetViewProps = {
   onHeadPatStart(): void;
   onHeadPatEnd(input: HeadPatInteractionInput): void;
   onHeadPatCancel(): void;
+  onDragStart(): void;
   onStartChat(): void;
   onMoveWindowBy(dx: number, dy: number): void;
   onChatSubmit(text: string): void;
   onChatCancel(): void;
 };
 
-export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpenSettings, onHeadPatStart, onHeadPatEnd, onHeadPatCancel, onStartChat, onMoveWindowBy, onChatSubmit, onChatCancel }: PetViewProps) {
+export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpenSettings, onHeadPatStart, onHeadPatEnd, onHeadPatCancel, onDragStart, onStartChat, onMoveWindowBy, onChatSubmit, onChatCancel }: PetViewProps) {
   const pointer = useRef<PointerState | null>(null);
 
   function distanceFromStart(state: { startX: number; startY: number }, event: MouseEvent | ReactMouseEvent) {
@@ -59,6 +60,7 @@ export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpe
       if (state.kind === "pending") {
         if (distanceFromStart(state, event) < DRAG_THRESHOLD_PX) return;
         window.clearTimeout(state.timer);
+        onDragStart();
         pointer.current = { kind: "dragging", lastX: state.lastX, lastY: state.lastY };
       }
 
@@ -70,6 +72,15 @@ export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpe
         pointer.current = { kind: "dragging", lastX: event.screenX, lastY: event.screenY };
         if (dx || dy) onMoveWindowBy(dx, dy);
       } else if (active.kind === "patting") {
+        if (distanceFromStart(active, event) >= DRAG_THRESHOLD_PX) {
+          const dx = event.screenX - active.lastX;
+          const dy = event.screenY - active.lastY;
+          onHeadPatCancel();
+          onDragStart();
+          pointer.current = { kind: "dragging", lastX: event.screenX, lastY: event.screenY };
+          if (dx || dy) onMoveWindowBy(dx, dy);
+          return;
+        }
         pointer.current = { ...active, lastX: event.screenX, lastY: event.screenY };
       }
     }
@@ -99,7 +110,7 @@ export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpe
       window.removeEventListener("mousemove", moveWindow);
       window.removeEventListener("mouseup", finishPointerInteraction);
     };
-  }, [onHeadPatCancel, onHeadPatEnd, onMoveWindowBy]);
+  }, [onDragStart, onHeadPatCancel, onHeadPatEnd, onMoveWindowBy]);
 
   function openSettings(event: ReactMouseEvent) {
     event.preventDefault();

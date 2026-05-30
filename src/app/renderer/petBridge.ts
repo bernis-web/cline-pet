@@ -5,6 +5,7 @@ export type RendererPetPack = {
   id: string;
   name: string;
   stateImages: Record<PetStatus, string>;
+  variants?: Partial<Record<PetStatus, string[]>>;
 };
 
 export type ChatResponse =

@@ -103,7 +103,19 @@ app.whenReady().then(async () => {
   let packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)];
   let selectedPetPackId = chooseInitialPetPackId(loadSelectedId(paths.stateFile), packs.map((pack) => pack.manifest.id));
   const selectedPack = () => packs.find((pack) => pack.manifest.id === selectedPetPackId) ?? packs[0];
-  const currentPetPackPayload = () => ({ id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
+  const currentPetPackPayload = () => {
+    const pack = selectedPack();
+    return {
+      id: pack.manifest.id,
+      name: pack.manifest.name,
+      stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(pack.stateFiles[status])])),
+      ...(pack.variants ? {
+      variants: Object.fromEntries(
+        Object.entries(pack.variants).map(([status, files]) => [status, files.map((file) => toFileUrl(file))])
+      )
+      } : {})
+    };
+  };
   const sendSelectedPack = () => win.webContents.send("pet-pack", currentPetPackPayload());
   ipcMain.handle("get-pet-pack", () => currentPetPackPayload());
   ipcMain.handle("deepseek:get-settings", () => getDeepSeekSettings(paths.root));

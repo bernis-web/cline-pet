@@ -3,7 +3,7 @@ import { PetStatus } from "../../shared/statuses";
 import { DeepSeekSettingsPanel } from "./DeepSeekSettingsPanel";
 import { PetView } from "./PetView";
 import { bubbleFromChat, bubbleFromNotice, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
-import type { DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse } from "./petBridge";
+import type { DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, RendererPetPack } from "./petBridge";
 import idleImage from "../../assets/default-pet/idle.svg";
 import thinkingImage from "../../assets/default-pet/thinking.svg";
 import workingImage from "../../assets/default-pet/working.svg";
@@ -15,8 +15,8 @@ declare global {
   interface Window {
     clinePet?: {
       onPetStatus(callback: (payload: { status: PetStatus; visibleStatus: PetStatus; baseStatus: PetStatus; overlayStatus: PetStatus | null; task?: string; message?: string; updatedAt?: string; normalizedFrom?: string }) => void): void;
-      onPetPack(callback: (payload: { stateImages: Record<PetStatus, string> }) => void): void;
-      getPetPack?(): Promise<{ stateImages: Record<PetStatus, string> }>;
+      onPetPack(callback: (payload: RendererPetPack) => void): void;
+      getPetPack?(): Promise<RendererPetPack>;
       sendChatMessage?(text: string): Promise<{ ok: true; text: string } | { ok: false; errorCode: string; message: string }>;
       getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
       saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -45,6 +45,7 @@ const defaultImages: Record<PetStatus, string> = {
 export function App() {
   const [visibleStatus, setVisibleStatus] = useState<PetStatus>("idle");
   const [temporaryStatus, setTemporaryStatus] = useState<PetStatus | null>(null);
+  const [temporaryImageSrc, setTemporaryImageSrc] = useState<string | null>(null);
   const [bubble, setBubble] = useState<BubbleMessage | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPending, setChatPending] = useState(false);
@@ -52,6 +53,23 @@ export function App() {
   const [settingsPending, setSettingsPending] = useState(false);
   const [deepSeekSettings, setDeepSeekSettings] = useState<DeepSeekSettings | null>(null);
   const [images, setImages] = useState(defaultImages);
+  const [variants, setVariants] = useState<Partial<Record<PetStatus, string[]>>>({});
+
+  function applyPack(payload: RendererPetPack) {
+    setImages({ ...defaultImages, ...payload.stateImages });
+    setVariants(payload.variants ?? {});
+  }
+
+  function pickVariant(status: PetStatus) {
+    const choices = variants[status];
+    if (!choices?.length) return null;
+    return choices[Math.floor(Math.random() * choices.length)] ?? null;
+  }
+
+  function clearTemporaryPose() {
+    setTemporaryStatus(null);
+    setTemporaryImageSrc(null);
+  }
 
   async function refreshDeepSeekSettings() {
     const result = await window.clinePet?.getDeepSeekSettings?.();
@@ -88,7 +106,7 @@ export function App() {
   }
 
   async function reportHeadPatInteraction(input: { startedAt: string; endedAt: string; durationMs: number }) {
-    setTemporaryStatus(null);
+    clearTemporaryPose();
     try {
       await window.clinePet?.reportHeadPatInteraction?.(input);
     } catch {
@@ -133,25 +151,33 @@ export function App() {
       if (nextBubble) setBubble(nextBubble);
     });
 
-    window.clinePet?.onPetPack((payload) => setImages({ ...defaultImages, ...payload.stateImages }));
-    window.clinePet?.getPetPack?.().then((payload) => setImages({ ...defaultImages, ...payload.stateImages })).catch(() => undefined);
+    window.clinePet?.onPetPack((payload) => applyPack(payload));
+    window.clinePet?.getPetPack?.().then((payload) => applyPack(payload)).catch(() => undefined);
   }, []);
 
   const displayStatus = temporaryStatus ?? visibleStatus;
+  const displayImageSrc = temporaryImageSrc ?? images[displayStatus] ?? defaultImages.idle;
 
   return (
     <>
       <PetView
         status={displayStatus}
-        imageSrc={images[displayStatus] ?? defaultImages.idle}
+        imageSrc={displayImageSrc}
         bubble={bubble}
         chatOpen={chatOpen}
         chatPending={chatPending}
         onStartChat={() => setChatOpen((open) => !open)}
         onOpenSettings={openDeepSeekSettings}
-        onHeadPatStart={() => setTemporaryStatus("head-pat")}
+        onHeadPatStart={() => {
+          setTemporaryStatus("head-pat");
+          setTemporaryImageSrc(pickVariant("head-pat"));
+        }}
         onHeadPatEnd={reportHeadPatInteraction}
-        onHeadPatCancel={() => setTemporaryStatus(null)}
+        onHeadPatCancel={clearTemporaryPose}
+        onDragStart={() => {
+          setTemporaryStatus("dragging");
+          setTemporaryImageSrc(null);
+        }}
         onMoveWindowBy={(dx, dy) => {
           try {
             Promise.resolve(window.clinePet?.movePetWindowBy?.(dx, dy)).catch(() => undefined);
