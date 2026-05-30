@@ -9,12 +9,21 @@ export type ProfileMemory = {
   updatedAt: string;
 };
 
+export type RelationshipWarmth = {
+  source: "head-pat" | "chat" | "presence";
+  intensity: "soft" | "normal";
+  updatedAt: string;
+  expiresAt: string;
+};
+
 export type RelationshipMemory = {
   familiarity: number;
   affection: number;
   engagement: number;
   trust: number;
   lastInteractionAt?: string;
+  lastHeadPatAt?: string;
+  recentWarmth?: RelationshipWarmth;
   recentEvents: { text: string; createdAt: string; weight: number }[];
   updatedAt: string;
 };
