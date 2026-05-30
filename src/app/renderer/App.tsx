@@ -21,6 +21,7 @@ declare global {
       getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
       saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
       movePetWindowBy?(dx: number, dy: number): Promise<{ ok: boolean; message?: string }>;
+      reportHeadPatInteraction?(input: { startedAt: string; endedAt: string; durationMs: number }): Promise<{ ok: true } | { ok: false; errorCode: string; message: string }>;
       onChatResponse?(callback: (payload: { ok: true; text: string } | { ok: false; errorCode: string; message: string }) => void): void;
     };
   }
@@ -43,6 +44,7 @@ const defaultImages: Record<PetStatus, string> = {
 
 export function App() {
   const [visibleStatus, setVisibleStatus] = useState<PetStatus>("idle");
+  const [temporaryStatus, setTemporaryStatus] = useState<PetStatus | null>(null);
   const [bubble, setBubble] = useState<BubbleMessage | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPending, setChatPending] = useState(false);
@@ -82,6 +84,15 @@ export function App() {
       setBubble(bubbleFromNotice("DeepSeek 已保存，可以直接聊天啦。"));
     } else {
       setBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function reportHeadPatInteraction(input: { startedAt: string; endedAt: string; durationMs: number }) {
+    setTemporaryStatus(null);
+    try {
+      await window.clinePet?.reportHeadPatInteraction?.(input);
+    } catch {
+      // Head-pat feedback should remain local even if persistence is unavailable.
     }
   }
 
@@ -126,16 +137,21 @@ export function App() {
     window.clinePet?.getPetPack?.().then((payload) => setImages({ ...defaultImages, ...payload.stateImages })).catch(() => undefined);
   }, []);
 
+  const displayStatus = temporaryStatus ?? visibleStatus;
+
   return (
     <>
       <PetView
-        status={visibleStatus}
-        imageSrc={images[visibleStatus] ?? defaultImages.idle}
+        status={displayStatus}
+        imageSrc={images[displayStatus] ?? defaultImages.idle}
         bubble={bubble}
         chatOpen={chatOpen}
         chatPending={chatPending}
         onStartChat={() => setChatOpen((open) => !open)}
         onOpenSettings={openDeepSeekSettings}
+        onHeadPatStart={() => setTemporaryStatus("head-pat")}
+        onHeadPatEnd={reportHeadPatInteraction}
+        onHeadPatCancel={() => setTemporaryStatus(null)}
         onMoveWindowBy={(dx, dy) => {
           try {
             Promise.resolve(window.clinePet?.movePetWindowBy?.(dx, dy)).catch(() => undefined);

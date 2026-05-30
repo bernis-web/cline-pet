@@ -11,6 +11,16 @@ export type ChatResponse =
   | { ok: true; text: string }
   | { ok: false; errorCode: string; message: string };
 
+export type HeadPatInteractionInput = {
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+};
+
+export type HeadPatInteractionResponse =
+  | { ok: true }
+  | { ok: false; errorCode: string; message: string };
+
 export type DeepSeekSettings = {
   configured: boolean;
   baseUrl: string;
@@ -38,6 +48,7 @@ export type IpcLike = {
   invoke(channel: "deepseek:get-settings"): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "deepseek:save-settings", payload: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "window:move-by", payload: { dx: number; dy: number }): Promise<{ ok: boolean; message?: string }>;
+  invoke(channel: "interaction:head-pat", payload: HeadPatInteractionInput): Promise<HeadPatInteractionResponse>;
 };
 
 export function createRendererPetBridge(ipc: IpcLike) {
@@ -62,6 +73,9 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     movePetWindowBy(dx: number, dy: number) {
       return ipc.invoke("window:move-by", { dx, dy });
+    },
+    reportHeadPatInteraction(input: HeadPatInteractionInput) {
+      return ipc.invoke("interaction:head-pat", input);
     },
     onChatResponse(callback: (payload: ChatResponse) => void) {
       ipc.on("chat:response", (_event, payload) => callback(payload));

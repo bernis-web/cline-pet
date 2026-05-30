@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../../../src/app/renderer/App";
 import { PET_STATUSES, type PetStatus } from "../../../src/shared/statuses";
 import { createRendererPetBridge } from "../../../src/app/renderer/petBridge";
@@ -11,7 +11,12 @@ function imageMap(prefix: string) {
 }
 
 describe("renderer App", () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+  });
+
   afterEach(() => {
+    vi.useRealTimers();
     document.body.innerHTML = "";
     delete (window as any).clinePet;
   });
@@ -236,5 +241,105 @@ describe("renderer App", () => {
     });
 
     expect(movePetWindowBy).toHaveBeenCalledWith(12, 6);
+  });
+
+  it("shows head-pat while the user gently holds the pet and reports the interaction on release", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-30T04:00:00.000Z"));
+    const reportHeadPatInteraction = vi.fn().mockResolvedValue({ ok: true });
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      reportHeadPatInteraction
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    const stage = document.querySelector(".pet-stage") as HTMLElement;
+    await act(async () => {
+      stage.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, screenX: 100, screenY: 100 }));
+      vi.advanceTimersByTime(450);
+    });
+
+    expect(document.querySelector("img")?.getAttribute("src")).toBe("file:///kaka/head-pat.png");
+
+    await act(async () => {
+      vi.advanceTimersByTime(650);
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, screenX: 102, screenY: 100 }));
+      await Promise.resolve();
+    });
+
+    expect(reportHeadPatInteraction).toHaveBeenCalledWith(expect.objectContaining({ durationMs: 700 }));
+    expect(document.querySelector("img")?.getAttribute("src")).toBe("file:///kaka/idle.png");
+  });
+
+  it("does not report a short click as a head pat", async () => {
+    vi.useFakeTimers();
+    const reportHeadPatInteraction = vi.fn();
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      reportHeadPatInteraction
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    const stage = document.querySelector(".pet-stage") as HTMLElement;
+    await act(async () => {
+      stage.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, screenX: 100, screenY: 100 }));
+      vi.advanceTimersByTime(100);
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, screenX: 100, screenY: 100 }));
+    });
+
+    expect(reportHeadPatInteraction).not.toHaveBeenCalled();
+    expect(document.querySelector("img")?.getAttribute("src")).toBe("file:///kaka/idle.png");
+  });
+
+  it("treats large movement as dragging instead of head patting", async () => {
+    vi.useFakeTimers();
+    const movePetWindowBy = vi.fn();
+    const reportHeadPatInteraction = vi.fn();
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      movePetWindowBy,
+      reportHeadPatInteraction
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    const stage = document.querySelector(".pet-stage") as HTMLElement;
+    await act(async () => {
+      stage.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, screenX: 100, screenY: 100 }));
+      window.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, buttons: 1, screenX: 120, screenY: 110 }));
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    });
+
+    expect(movePetWindowBy).toHaveBeenCalledWith(20, 10);
+    expect(reportHeadPatInteraction).not.toHaveBeenCalled();
   });
 });
