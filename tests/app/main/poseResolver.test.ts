@@ -9,4 +9,8 @@ describe("pose resolver", () => {
   it("prefers head-pat style response for attached mood", () => {
     expect(resolveDisplayedPose({ mood: "attached", activity: "chatting", bondStage: "close" })).toEqual({ status: "head-pat" });
   });
+
+  it("prioritizes active patting over mood-driven pose", () => {
+    expect(resolveDisplayedPose({ mood: "upset", activity: "patting", bondStage: "new" })).toEqual({ status: "head-pat" });
+  });
 });

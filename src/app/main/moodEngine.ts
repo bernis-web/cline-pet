@@ -8,6 +8,11 @@ export type MoodState = {
   suggestedStatus: PetStatus;
 };
 
+function hasActiveWarmth(relationship: RelationshipMemory, now: string) {
+  if (!relationship.recentWarmth) return false;
+  return new Date(relationship.recentWarmth.expiresAt).getTime() > new Date(now).getTime();
+}
+
 export function deriveMoodState(input: {
   now: string;
   relationship: RelationshipMemory;
@@ -17,6 +22,7 @@ export function deriveMoodState(input: {
   clineVisibleStatus: PetStatus;
 }): MoodState {
   const hour = new Date(input.now).getUTCHours();
+  const activeWarmth = hasActiveWarmth(input.relationship, input.now);
 
   if (input.clineVisibleStatus === "loading" || input.clineVisibleStatus === "thinking") {
     return { name: "curious", suggestedStatus: input.clineVisibleStatus };
@@ -27,6 +33,9 @@ export function deriveMoodState(input: {
   }
 
   if (input.lastChatSentiment === "negative") {
+    if (activeWarmth) {
+      return { name: "calm", suggestedStatus: "idle" };
+    }
     return { name: "upset", suggestedStatus: "angry" };
   }
 

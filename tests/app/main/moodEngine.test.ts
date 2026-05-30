@@ -43,4 +43,57 @@ describe("mood engine", () => {
     expect(mood.name).toBe("sleepy");
     expect(["sleepy", "sleeping"]).toContain(mood.suggestedStatus);
   });
+
+  it("uses recent warmth as a gentle calming signal without making it a reward", () => {
+    const mood = deriveMoodState({
+      now: "2026-05-30T04:10:00.000Z",
+      relationship: {
+        familiarity: 10,
+        affection: 10,
+        engagement: 10,
+        trust: 10,
+        lastHeadPatAt: "2026-05-30T04:00:00.000Z",
+        recentWarmth: {
+          source: "head-pat",
+          intensity: "soft",
+          updatedAt: "2026-05-30T04:00:00.000Z",
+          expiresAt: "2026-05-30T04:30:00.000Z"
+        },
+        recentEvents: [],
+        updatedAt: "2026-05-30T04:00:00.000Z"
+      },
+      hasRecentChat: true,
+      lastChatSentiment: "negative",
+      memoryHitCount: 0,
+      clineVisibleStatus: "idle"
+    });
+
+    expect(mood).toEqual({ name: "calm", suggestedStatus: "idle" });
+  });
+
+  it("ignores expired warmth", () => {
+    const mood = deriveMoodState({
+      now: "2026-05-30T05:00:00.000Z",
+      relationship: {
+        familiarity: 10,
+        affection: 10,
+        engagement: 10,
+        trust: 10,
+        recentWarmth: {
+          source: "head-pat",
+          intensity: "soft",
+          updatedAt: "2026-05-30T04:00:00.000Z",
+          expiresAt: "2026-05-30T04:30:00.000Z"
+        },
+        recentEvents: [],
+        updatedAt: "2026-05-30T04:00:00.000Z"
+      },
+      hasRecentChat: true,
+      lastChatSentiment: "negative",
+      memoryHitCount: 0,
+      clineVisibleStatus: "idle"
+    });
+
+    expect(mood).toEqual({ name: "upset", suggestedStatus: "angry" });
+  });
 });
