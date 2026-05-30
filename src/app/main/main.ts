@@ -11,7 +11,7 @@ import type { UpdatePetStatusInput } from "../../shared/schemas.js";
 import { PET_STATUSES, type PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
 import { createChatReply } from "./chatService.js";
-import { loadDeepSeekConfig } from "./config.js";
+import { getDeepSeekSettings, loadDeepSeekConfig, saveDeepSeekSettings, type DeepSeekSettingsInput } from "./config.js";
 import { loadRelationshipMemory } from "./memory/relationshipStore.js";
 import { deriveMoodState } from "./moodEngine.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
@@ -105,6 +105,16 @@ app.whenReady().then(async () => {
   const currentPetPackPayload = () => ({ id: selectedPack().manifest.id, name: selectedPack().manifest.name, stateImages: Object.fromEntries(PET_STATUSES.map((status) => [status, toFileUrl(selectedPack().stateFiles[status])])) });
   const sendSelectedPack = () => win.webContents.send("pet-pack", currentPetPackPayload());
   ipcMain.handle("get-pet-pack", () => currentPetPackPayload());
+  ipcMain.handle("deepseek:get-settings", () => getDeepSeekSettings(paths.root));
+  ipcMain.handle("deepseek:save-settings", (_event, payload: DeepSeekSettingsInput) => saveDeepSeekSettings(paths.root, payload ?? {}));
+  ipcMain.handle("window:move-by", (_event, payload: { dx?: number; dy?: number }) => {
+    const dx = Number(payload?.dx ?? 0);
+    const dy = Number(payload?.dy ?? 0);
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return { ok: false, message: "invalid delta" };
+    const bounds = win.getBounds();
+    win.setPosition(Math.round(bounds.x + dx), Math.round(bounds.y + dy), false);
+    return { ok: true };
+  });
   ipcMain.handle("chat:send", async (_event, payload: { text?: string }) => {
     const config = loadDeepSeekConfig(paths.root);
     if (!config.ok) return { ok: false, errorCode: config.errorCode, message: config.message };
@@ -163,7 +173,20 @@ app.whenReady().then(async () => {
     },
     onDiagnostics: diagnostics,
     onShow: () => showPetWindow(win),
-    onQuit: () => app.quit()
+    onQuit: () => app.quit(),
+    onError(error) {
+      writeLog(paths.appLog, "error", "bridge server failed", { code: error.code, message: error.message, bridgePort });
+      notifyRenderer(win, {
+        status: "signal-weak",
+        visibleStatus: "signal-weak",
+        baseStatus: "signal-weak",
+        overlayStatus: null,
+        task: "",
+        source: "bridge",
+        message: error.code === "EADDRINUSE" ? `端口 ${bridgePort} 已被占用，可能已经有一个卡卡在运行。` : `Bridge 启动失败：${error.message}`,
+        updatedAt: new Date().toISOString()
+      });
+    }
   });
 
   createTray({

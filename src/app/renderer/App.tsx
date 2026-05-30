@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { PetStatus } from "../../shared/statuses";
-import { DiagnosticsPanel } from "./DiagnosticsPanel";
+import { DeepSeekSettingsPanel } from "./DeepSeekSettingsPanel";
 import { PetView } from "./PetView";
-import { bubbleFromChat, bubbleFromDiagnostics, bubbleFromNotice, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
+import { bubbleFromChat, bubbleFromNotice, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
+import type { DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse } from "./petBridge";
 import idleImage from "../../assets/default-pet/idle.svg";
 import thinkingImage from "../../assets/default-pet/thinking.svg";
 import workingImage from "../../assets/default-pet/working.svg";
@@ -17,6 +18,9 @@ declare global {
       onPetPack(callback: (payload: { stateImages: Record<PetStatus, string> }) => void): void;
       getPetPack?(): Promise<{ stateImages: Record<PetStatus, string> }>;
       sendChatMessage?(text: string): Promise<{ ok: true; text: string } | { ok: false; errorCode: string; message: string }>;
+      getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
+      saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
+      movePetWindowBy?(dx: number, dy: number): Promise<{ ok: boolean; message?: string }>;
       onChatResponse?(callback: (payload: { ok: true; text: string } | { ok: false; errorCode: string; message: string }) => void): void;
     };
   }
@@ -38,13 +42,48 @@ const defaultImages: Record<PetStatus, string> = {
 };
 
 export function App() {
-  const [status, setStatus] = useState<PetStatus>("idle");
   const [visibleStatus, setVisibleStatus] = useState<PetStatus>("idle");
   const [bubble, setBubble] = useState<BubbleMessage | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPending, setChatPending] = useState(false);
-  const [diagnostics, setDiagnostics] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsPending, setSettingsPending] = useState(false);
+  const [deepSeekSettings, setDeepSeekSettings] = useState<DeepSeekSettings | null>(null);
   const [images, setImages] = useState(defaultImages);
+
+  async function refreshDeepSeekSettings() {
+    const result = await window.clinePet?.getDeepSeekSettings?.();
+    if (!result) return;
+    if (result.ok) {
+      setDeepSeekSettings(result.data);
+    } else {
+      setBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function openDeepSeekSettings() {
+    setSettingsOpen(true);
+    await refreshDeepSeekSettings();
+  }
+
+  async function saveDeepSeekSettings(input: DeepSeekSettingsInput) {
+    setSettingsPending(true);
+    const result = await window.clinePet?.saveDeepSeekSettings?.(input);
+    setSettingsPending(false);
+
+    if (!result) {
+      setBubble(bubbleFromNotice("DeepSeek 设置通道还没有准备好。"));
+      return;
+    }
+
+    if (result.ok) {
+      setDeepSeekSettings(result.data);
+      setSettingsOpen(false);
+      setBubble(bubbleFromNotice("DeepSeek 已保存，可以直接聊天啦。"));
+    } else {
+      setBubble(bubbleFromNotice(result.message));
+    }
+  }
 
   async function sendChat(text: string) {
     setChatPending(true);
@@ -68,13 +107,16 @@ export function App() {
       setBubble(bubbleFromChat(result.text));
       setChatOpen(false);
     } else {
+      if (result.errorCode === "DEEPSEEK_API_KEY_MISSING") {
+        setSettingsOpen(true);
+        await refreshDeepSeekSettings();
+      }
       setBubble(bubbleFromNotice(result.message));
     }
   }
 
   useEffect(() => {
     window.clinePet?.onPetStatus((payload) => {
-      setStatus(payload.status);
       setVisibleStatus(payload.visibleStatus ?? payload.status);
       const nextBubble = bubbleFromStatus(payload);
       if (nextBubble) setBubble(nextBubble);
@@ -92,16 +134,19 @@ export function App() {
         bubble={bubble}
         chatOpen={chatOpen}
         chatPending={chatPending}
-        onStartChat={() => setChatOpen(true)}
+        onStartChat={() => setChatOpen((open) => !open)}
+        onOpenSettings={openDeepSeekSettings}
+        onMoveWindowBy={(dx, dy) => {
+          try {
+            Promise.resolve(window.clinePet?.movePetWindowBy?.(dx, dy)).catch(() => undefined);
+          } catch {
+            // Ignore movement failures; dragging should never break chat/status UI.
+          }
+        }}
         onChatSubmit={sendChat}
         onChatCancel={() => setChatOpen(false)}
-        onDiagnose={() => {
-          const text = `status=${status}\nvisibleStatus=${visibleStatus}`;
-          setDiagnostics(text);
-          setBubble(bubbleFromDiagnostics("诊断信息已打开。"));
-        }}
       />
-      <DiagnosticsPanel text={diagnostics} onClose={() => setDiagnostics("")} />
+      <DeepSeekSettingsPanel open={settingsOpen} pending={settingsPending} settings={deepSeekSettings} onSave={saveDeepSeekSettings} onCancel={() => setSettingsOpen(false)} />
     </>
   );
 }

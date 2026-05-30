@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState, type KeyboardEvent } from "react";
 
 export type ChatInputProps = {
   open: boolean;
@@ -9,7 +9,18 @@ export type ChatInputProps = {
 
 export function ChatInput({ open, pending, onSubmit, onCancel }: ChatInputProps) {
   const [text, setText] = useState("");
+
+  useEffect(() => {
+    if (!open || pending || text.trim()) return;
+    const timer = window.setTimeout(onCancel, 12000);
+    return () => window.clearTimeout(timer);
+  }, [open, pending, text, onCancel]);
+
   if (!open) return null;
+
+  function cancelWithEscape(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape" && !pending) onCancel();
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -26,6 +37,7 @@ export function ChatInput({ open, pending, onSubmit, onCancel }: ChatInputProps)
         name="message"
         value={text}
         onInput={(event) => setText((event.currentTarget as HTMLInputElement).value)}
+        onKeyDown={cancelWithEscape}
         placeholder="和卡卡说话..."
         disabled={pending}
       />

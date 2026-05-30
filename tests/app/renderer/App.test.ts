@@ -125,4 +125,116 @@ describe("renderer App", () => {
 
     expect(document.querySelector("img")?.className).toContain("pet-motion-happy");
   });
+
+  it("keeps the pet image interactive so double-click opens chat", async () => {
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") })
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+    });
+
+    const stage = document.querySelector(".pet-stage") as HTMLElement;
+    expect(stage.className).not.toContain("drag-region");
+
+    await act(async () => {
+      stage.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    });
+
+    expect(document.querySelector(".chat-input")).not.toBeNull();
+  });
+
+  it("opens DeepSeek settings from right-click without main-surface buttons", async () => {
+    const saveDeepSeekSettings = vi.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        configured: true,
+        baseUrl: "https://api.deepseek.com",
+        model: "DeepSeek V4 Pro",
+        apiKeySource: "file",
+        configPath: "C:/Users/me/AppData/Roaming/cline-desktop-pet/config.json"
+      }
+    });
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      getDeepSeekSettings: vi.fn().mockResolvedValue({
+        ok: true,
+        data: {
+          configured: false,
+          baseUrl: "https://api.deepseek.com",
+          model: "DeepSeek V4 Pro",
+          apiKeySource: "missing",
+          configPath: "C:/Users/me/AppData/Roaming/cline-desktop-pet/config.json"
+        }
+      }),
+      saveDeepSeekSettings
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+    });
+
+    expect(document.querySelector(".diagnose-button")).toBeNull();
+    expect(document.querySelector(".settings-button")).toBeNull();
+
+    await act(async () => {
+      (document.querySelector(".pet-stage") as HTMLElement).dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+
+    const apiKey = document.querySelector('input[name="apiKey"]') as HTMLInputElement;
+    const model = document.querySelector('input[name="model"]') as HTMLInputElement;
+    const form = document.querySelector(".settings-panel form") as HTMLFormElement;
+
+    expect(model.value).toBe("DeepSeek V4 Pro");
+
+    await act(async () => {
+      apiKey.value = "sk-test";
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+
+    expect(saveDeepSeekSettings).toHaveBeenCalledWith({ apiKey: "sk-test", baseUrl: "https://api.deepseek.com", model: "DeepSeek V4 Pro" });
+    expect(document.querySelector(".speech-bubble")?.textContent).toContain("DeepSeek 已保存");
+  });
+
+  it("uses pet dragging gestures to move the frameless window", async () => {
+    const movePetWindowBy = vi.fn();
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      movePetWindowBy
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+    });
+
+    const stage = document.querySelector(".pet-stage") as HTMLElement;
+    await act(async () => {
+      stage.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, screenX: 100, screenY: 100 }));
+      window.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, buttons: 1, screenX: 112, screenY: 106 }));
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    });
+
+    expect(movePetWindowBy).toHaveBeenCalledWith(12, 6);
+  });
 });

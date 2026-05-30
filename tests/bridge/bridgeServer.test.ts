@@ -66,4 +66,25 @@ describe("bridge server control endpoints", () => {
       normalizedFrom: "done"
     }));
   });
+
+  it("reports listen errors without crashing the process", async () => {
+    const firstServer = startBridgeServer(0, {
+      onStatus: vi.fn(),
+      onDiagnostics: () => ({ ok: true })
+    });
+    await new Promise<void>((resolve) => firstServer.once("listening", resolve));
+    const port = (firstServer.address() as AddressInfo).port;
+    const onError = vi.fn();
+
+    server = startBridgeServer(port, {
+      onStatus: vi.fn(),
+      onDiagnostics: () => ({ ok: true }),
+      onError
+    });
+
+    await new Promise<void>((resolve) => server?.once("error", () => resolve()));
+
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ code: "EADDRINUSE" }));
+    firstServer.close();
+  });
 });
