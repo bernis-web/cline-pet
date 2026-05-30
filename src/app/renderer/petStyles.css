@@ -1,1 +1,276 @@
-html,body,#root{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:system-ui,sans-serif}.pet-shell{width:300px;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}.drag-region{-webkit-app-region:drag}.pet-stage{flex:1;display:flex;align-items:flex-end;justify-content:center;width:100%}.pet-image{width:150px;height:150px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 16px 24px rgba(0,0,0,.35))}.bubble-panel{width:240px;padding:10px 12px;border-radius:18px;color:#e5e7eb;background:rgba(17,24,39,.82);border:1px solid rgba(148,163,184,.35);box-shadow:0 18px 40px rgba(0,0,0,.28);display:grid;gap:3px;font-size:12px}.bubble-panel button{-webkit-app-region:no-drag;margin-top:4px;border:0;border-radius:10px;padding:5px 8px;color:#111827;background:#fbbf24;cursor:pointer}.diagnostics{position:absolute;inset:12px;padding:10px;border-radius:12px;background:rgba(15,23,42,.92);color:#e5e7eb;font-size:11px}.diagnostics button{float:right}.diagnostics pre{white-space:pre-wrap}
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+
+.pet-shell {
+  width: 360px;
+  height: 420px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.pet-stage {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  padding: 180px 0 72px;
+  -webkit-app-region: no-drag;
+}
+
+.pet-image {
+  width: 150px;
+  height: 150px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.35));
+}
+
+.speech-bubble {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  box-sizing: border-box;
+  width: calc(100% - 36px);
+  max-width: 320px;
+  max-height: 160px;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border-radius: 18px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(251, 191, 36, 0.75);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.22);
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  animation: bubble-pop 160ms ease-out;
+  -webkit-app-region: no-drag;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  transform: translateX(-50%) rotate(45deg);
+  background: rgba(255, 255, 255, 0.94);
+  border-right: 1px solid rgba(251, 191, 36, 0.75);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.75);
+}
+
+.speech-bubble[data-kind="notice"] {
+  border-color: rgba(248, 113, 113, 0.8);
+}
+
+.speech-bubble[data-kind="chat"] {
+  border-color: rgba(96, 165, 250, 0.8);
+}
+
+.speech-bubble-text {
+  position: relative;
+  z-index: 1;
+}
+
+.diagnostics {
+  position: absolute;
+  inset: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #e5e7eb;
+  font-size: 11px;
+}
+
+.diagnostics button {
+  float: right;
+}
+
+.diagnostics pre {
+  white-space: pre-wrap;
+}
+
+@keyframes bubble-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.chat-input {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  display: flex;
+  gap: 4px;
+  width: calc(100% - 24px);
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+  -webkit-app-region: no-drag;
+}
+
+.chat-input input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.chat-input button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 8px;
+  cursor: pointer;
+  background: #fbbf24;
+  color: #111827;
+}
+
+.settings-panel {
+  position: absolute;
+  inset: 10px;
+  z-index: 3;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #e5e7eb;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.34);
+  font-size: 12px;
+  -webkit-app-region: no-drag;
+}
+
+.settings-panel form {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-panel header,
+.settings-panel footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.settings-panel header span,
+.settings-help {
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+.settings-panel label {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-panel input {
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 10px;
+  padding: 7px 9px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.94);
+  outline: 0;
+}
+
+.settings-help {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-panel button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.settings-panel button[type="submit"] {
+  background: #60a5fa;
+  color: #0f172a;
+}
+
+.pet-motion-idle,
+.pet-motion-sleepy,
+.pet-motion-sleeping {
+  animation: pet-float 2.8s ease-in-out infinite;
+}
+
+.pet-motion-thinking {
+  animation: pet-pulse 1.6s ease-in-out infinite;
+}
+
+.pet-motion-happy,
+.pet-motion-head-pat {
+  animation: pet-bounce 0.9s ease-in-out infinite;
+}
+
+.pet-motion-loading,
+.pet-motion-dragging {
+  animation: pet-wiggle 0.8s ease-in-out infinite;
+}
+
+.pet-motion-not-found,
+.pet-motion-signal-weak,
+.pet-motion-angry {
+  animation: pet-shake 0.55s ease-in-out infinite;
+}
+
+@keyframes pet-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pet-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.35)); }
+  50% { transform: scale(1.035); filter: drop-shadow(0 16px 28px rgba(96, 165, 250, 0.45)); }
+}
+
+@keyframes pet-bounce {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-9px); }
+}
+
+@keyframes pet-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+@keyframes pet-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}

@@ -1,16 +1,29 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { buildDiagnosticsReport, formatDebugReport } from "../../src/diagnostics/diagnostics";
 
 describe("diagnostics", () => {
-  it("builds a report with pet pack and log info", () => {
+  it("builds a report with state model, pet pack, and log info", () => {
     const report = buildDiagnosticsReport({
       bridgePort: 37621,
-      selectedPetPackId: "default-pixel-dev",
+      selectedPetPackId: "kaka-desktop-pet",
       selectedPetPackValid: true,
+      selectedPetPackHasAllStandardStates: true,
+      localKakaPetPackPath: "C:/Users/example/AppData/Roaming/cline-desktop-pet/pets/kaka-desktop-pet",
+      localKakaPetPackInstalled: true,
+      currentState: {
+        status: "loading",
+        visibleStatus: "loading",
+        baseStatus: "loading",
+        overlayStatus: null,
+        task: "test",
+        source: "cline"
+      },
       logs: { app: "app.log", mcp: "mcp.log" }
     });
-    expect(report.selectedPetPackId).toBe("default-pixel-dev");
-    expect(report.bridgeReachable).toBe(true);
+    expect(report.selectedPetPackId).toBe("kaka-desktop-pet");
+    expect(report.selectedPetPackHasAllStandardStates).toBe(true);
+    expect(report.currentState.visibleStatus).toBe("loading");
+    expect(report.localKakaPetPackInstalled).toBe(true);
   });
 
   it("formats a copyable debug report", () => {

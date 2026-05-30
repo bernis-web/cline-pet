@@ -12,6 +12,9 @@ export function getPaths(env = process.env) {
     logs: join(root, "logs"),
     petPacks: join(root, "pets"),
     stateFile: join(root, "state.json"),
+    profileMemoryFile: join(root, "profile.json"),
+    relationshipMemoryFile: join(root, "relationship.json"),
+    contextMemoryFile: join(root, "context-memory.jsonl"),
     appLog: join(root, "logs", "pet-app.log"),
     mcpLog: join(root, "logs", "mcp-server.log")
   };

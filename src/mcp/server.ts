@@ -1,20 +1,51 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+﻿import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { pathToFileURL } from "node:url";
 import { sendStatusToBridge } from "../bridge/bridgeClient.js";
-import { ERROR_CODES, fail } from "../shared/errors.js";
+import { ERROR_CODES, fail, ok } from "../shared/errors.js";
 import type { ToolResult } from "../shared/errors.js";
 import { updatePetStatusSchema } from "../shared/schemas.js";
+import { LEGACY_PET_STATUSES, PET_STATUSES } from "../shared/statuses.js";
 
 const bridgePort = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
+
+export function isCliEntryPoint(moduleUrl: string, entryPath = process.argv[1]) {
+  return Boolean(entryPath) && moduleUrl === pathToFileURL(entryPath).href;
+}
+
+export const updatePetStatusInputSchema = {
+  type: "object",
+  properties: {
+    status: { type: "string", enum: [...PET_STATUSES, ...LEGACY_PET_STATUSES] },
+    layer: { type: "string", enum: ["base", "overlay"] },
+    durationMs: { type: "number" },
+    task: { type: "string" },
+    message: { type: "string" },
+    source: { type: "string" },
+    updatedAt: { type: "string" }
+  },
+  required: ["status"]
+} as const;
 
 export async function handleUpdatePetStatus(
   input: unknown,
   sender = (payload: any) => sendStatusToBridge({ port: bridgePort, timeoutMs: 1200 }, payload)
-): Promise<ToolResult<{ delivered: boolean }>> {
+): Promise<ToolResult<{ delivered: boolean; status: string; visibleStatus: string; baseStatus: string; overlayStatus: string | null; updatedAt: string; normalizedFrom?: string }>> {
   const parsed = updatePetStatusSchema.safeParse(input);
   if (!parsed.success) return fail(ERROR_CODES.INVALID_STATUS, parsed.error.message);
-  return sender({ ...parsed.data, updatedAt: parsed.data.updatedAt ?? new Date().toISOString() });
+  const payload = { ...parsed.data, updatedAt: parsed.data.updatedAt ?? new Date().toISOString() };
+  const delivered = await sender(payload);
+  if (!delivered.ok) return delivered;
+  return ok({
+    delivered: delivered.data.delivered,
+    status: payload.status,
+    visibleStatus: payload.visibleStatus,
+    baseStatus: payload.baseStatus,
+    overlayStatus: payload.overlayStatus,
+    updatedAt: payload.updatedAt,
+    ...(payload.normalizedFrom ? { normalizedFrom: payload.normalizedFrom } : {})
+  });
 }
 
 export async function startMcpServer() {
@@ -25,17 +56,7 @@ export async function startMcpServer() {
       {
         name: "update_pet_status",
         description: "Update the Cline desktop pet status.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            status: { type: "string", enum: ["idle", "thinking", "working", "waiting-approval", "done", "error"] },
-            task: { type: "string" },
-            message: { type: "string" },
-            source: { type: "string" },
-            updatedAt: { type: "string" }
-          },
-          required: ["status"]
-        }
+        inputSchema: updatePetStatusInputSchema
       },
       {
         name: "pet_status_check",
@@ -61,7 +82,7 @@ export async function startMcpServer() {
   await server.connect(new StdioServerTransport());
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntryPoint(import.meta.url)) {
   startMcpServer().catch((error) => {
     console.error(error);
     process.exit(1);

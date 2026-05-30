@@ -7,6 +7,7 @@ export type BridgeServerHandlers = {
   onDiagnostics(): Record<string, unknown>;
   onShow?(): void;
   onQuit?(): void;
+  onError?(error: NodeJS.ErrnoException): void;
 };
 
 async function readJson(req: IncomingMessage) {
@@ -41,6 +42,7 @@ export function startBridgeServer(port: number, handlers: BridgeServerHandlers) 
     }
     return json(res, 404, { ok: false, error: "not found" });
   });
+  server.on("error", (error: NodeJS.ErrnoException) => handlers.onError?.(error));
   server.listen(port, "127.0.0.1");
   return server;
 }

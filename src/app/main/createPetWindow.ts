@@ -6,8 +6,8 @@ const currentDir = fileURLToPath(new URL(".", import.meta.url));
 
 export function createPetWindow() {
   const display = screen.getPrimaryDisplay();
-  const width = 300;
-  const height = 260;
+  const width = 360;
+  const height = 420;
   const win = new BrowserWindow({
     width,
     height,
@@ -18,8 +18,10 @@ export function createPetWindow() {
     alwaysOnTop: true,
     resizable: false,
     hasShadow: false,
-    webPreferences: { preload: join(currentDir, "preload.js"), contextIsolation: true, nodeIntegration: false }
+    skipTaskbar: true,
+    webPreferences: { preload: join(currentDir, "preload.cjs"), contextIsolation: true, nodeIntegration: false }
   });
   win.setAlwaysOnTop(true, "floating");
+  win.setSkipTaskbar(true);
   return win;
 }
