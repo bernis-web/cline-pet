@@ -76,4 +76,23 @@ describe("head pat interaction service", () => {
     expect(relationship.recentEvents.filter((event) => event.text === "今天被轻轻摸了摸头")).toHaveLength(1);
     expect(relationship.lastHeadPatAt).toBe("2026-05-30T05:00:01.000Z");
   });
+
+  it("returns a compact success response shape usable by IPC handlers", () => {
+    const root = mkdtempSync(join(tmpdir(), "cline-head-pat-"));
+    roots.push(root);
+
+    const result = recordHeadPatInteraction(root, {
+      startedAt: "2026-05-30T04:00:00.000Z",
+      endedAt: "2026-05-30T04:00:01.000Z",
+      durationMs: 1000
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      relationship: expect.objectContaining({
+        lastHeadPatAt: "2026-05-30T04:00:01.000Z",
+        recentWarmth: expect.objectContaining({ source: "head-pat", intensity: "soft" })
+      })
+    });
+  });
 });

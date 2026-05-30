@@ -12,6 +12,7 @@ import { PET_STATUSES, type PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
 import { createChatReply } from "./chatService.js";
 import { getDeepSeekSettings, loadDeepSeekConfig, saveDeepSeekSettings, type DeepSeekSettingsInput } from "./config.js";
+import { recordHeadPatInteraction, type HeadPatInteractionInput } from "./interaction/headPatService.js";
 import { loadRelationshipMemory } from "./memory/relationshipStore.js";
 import { deriveMoodState } from "./moodEngine.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
@@ -113,6 +114,32 @@ app.whenReady().then(async () => {
     if (!Number.isFinite(dx) || !Number.isFinite(dy)) return { ok: false, message: "invalid delta" };
     const bounds = win.getBounds();
     win.setPosition(Math.round(bounds.x + dx), Math.round(bounds.y + dy), false);
+    return { ok: true };
+  });
+  ipcMain.handle("interaction:head-pat", (_event, payload: HeadPatInteractionInput) => {
+    const result = recordHeadPatInteraction(appDataBaseDir, payload ?? {});
+    if (!result.ok) return result;
+
+    const now = new Date().toISOString();
+    const mood = deriveMoodState({
+      now,
+      relationship: result.relationship,
+      hasRecentChat: true,
+      lastChatSentiment: "neutral",
+      memoryHitCount: 0,
+      clineVisibleStatus: latestStatus.visibleStatus
+    });
+
+    notifyRenderer(win, {
+      status: mood.suggestedStatus,
+      visibleStatus: mood.suggestedStatus,
+      baseStatus: mood.suggestedStatus,
+      overlayStatus: null,
+      task: "",
+      source: "interaction",
+      updatedAt: now
+    });
+
     return { ok: true };
   });
   ipcMain.handle("chat:send", async (_event, payload: { text?: string }) => {
