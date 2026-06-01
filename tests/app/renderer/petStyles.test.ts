@@ -24,4 +24,12 @@ describe("pet renderer styles", () => {
     expect(styles).toContain(".chat-history-panel");
     expect(styles).toContain("inset: 12px");
   });
+
+  it("includes memory trigger, relationship overview, and memory list styles", () => {
+    expect(styles).toContain(".memory-trigger");
+    expect(styles).toContain(".memory-panel");
+    expect(styles).toContain(".relationship-card");
+    expect(styles).toContain(".memory-list");
+    expect(styles).toContain(".memory-delete");
+  });
 });

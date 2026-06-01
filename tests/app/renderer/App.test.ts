@@ -179,6 +179,96 @@ describe("renderer App", () => {
     expect(document.querySelector(".chat-history-panel")?.textContent).toContain("今天好累");
   });
 
+  it("opens memory panel and manages long-term memories", async () => {
+    const getMemoryOverview = vi.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        relationship: {
+          stage: "familiar",
+          stageLabel: "熟悉",
+          stageDescription: "卡卡已经记得一些与你相处的节奏。",
+          familiarity: 30,
+          affection: 30,
+          engagement: 30,
+          trust: 30,
+          updatedAt: "2026-06-01T01:00:00.000Z"
+        },
+        memories: [
+          {
+            id: "m1",
+            kind: "preference",
+            text: "用户喜欢温柔提醒",
+            tags: ["chat"],
+            weight: 80,
+            createdAt: "2026-06-01T01:00:00.000Z",
+            updatedAt: "2026-06-01T01:00:00.000Z"
+          },
+          {
+            id: "m2",
+            kind: "project-context",
+            text: "项目是卡卡桌宠",
+            tags: ["project"],
+            weight: 65,
+            createdAt: "2026-06-01T01:00:00.000Z",
+            updatedAt: "2026-06-01T02:00:00.000Z"
+          }
+        ]
+      }
+    });
+    const deleteMemory = vi.fn().mockResolvedValue({ ok: true });
+    const clearMemories = vi.fn().mockResolvedValue({ ok: true });
+    const exportMemories = vi.fn().mockResolvedValue({ ok: true, data: "{\n  \"count\": 1\n}" });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    window.confirm = vi.fn().mockReturnValue(true);
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      getMemoryOverview,
+      deleteMemory,
+      clearMemories,
+      exportMemories
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+    await act(async () => {
+      (document.querySelector(".memory-trigger") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+
+    expect(getMemoryOverview).toHaveBeenCalledOnce();
+    expect(document.querySelector(".memory-panel")?.textContent).toContain("用户喜欢温柔提醒");
+
+    await act(async () => {
+      (document.querySelector('[data-memory-delete="m1"]') as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    expect(deleteMemory).toHaveBeenCalledWith("m1");
+    expect(document.querySelector(".memory-panel")?.textContent).not.toContain("用户喜欢温柔提醒");
+
+    await act(async () => {
+      (document.querySelector(".memory-export") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    expect(exportMemories).toHaveBeenCalledOnce();
+    expect(writeText).toHaveBeenCalledWith("{\n  \"count\": 1\n}");
+
+    await act(async () => {
+      (document.querySelector(".memory-clear") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    expect(clearMemories).toHaveBeenCalledOnce();
+    expect(document.querySelector(".memory-empty")?.textContent).toContain("卡卡还没有长期记忆");
+  });
+
   it("reports reading activity while a long chat bubble is open in readable mode", async () => {
     const longReply = "卡卡会慢慢说清楚，也会等你读完这一段，不会在你认真阅读的时候突然插话。".repeat(8);
     const setPresenceActivity = vi.fn().mockResolvedValue({ ok: true });
