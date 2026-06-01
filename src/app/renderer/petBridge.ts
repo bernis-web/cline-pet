@@ -30,6 +30,14 @@ export type ClearChatHistoryResponse =
   | { ok: true }
   | { ok: false; errorCode: string; message: string };
 
+export type PresenceActivityInput = {
+  userIsReading?: boolean;
+};
+
+export type PresenceActivityResponse =
+  | { ok: true }
+  | { ok: false; message: string };
+
 export type HeadPatInteractionInput = {
   startedAt: string;
   endedAt: string;
@@ -66,6 +74,7 @@ export type IpcLike = {
   invoke(channel: "chat:send", payload: { text: string }): Promise<ChatResponse>;
   invoke(channel: "chat:get-history"): Promise<ChatHistoryResponse>;
   invoke(channel: "chat:clear-history"): Promise<ClearChatHistoryResponse>;
+  invoke(channel: "presence:set-activity", payload: PresenceActivityInput): Promise<PresenceActivityResponse>;
   invoke(channel: "deepseek:get-settings"): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "deepseek:save-settings", payload: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "window:move-by", payload: { dx: number; dy: number }): Promise<{ ok: boolean; message?: string }>;
@@ -91,6 +100,9 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     clearChatHistory() {
       return ipc.invoke("chat:clear-history");
+    },
+    setPresenceActivity(input: PresenceActivityInput) {
+      return ipc.invoke("presence:set-activity", input);
     },
     getDeepSeekSettings() {
       return ipc.invoke("deepseek:get-settings");

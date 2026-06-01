@@ -31,4 +31,13 @@ describe("renderer pet bridge", () => {
     expect(invoke).toHaveBeenNthCalledWith(1, "chat:get-history");
     expect(invoke).toHaveBeenNthCalledWith(2, "chat:clear-history");
   });
+
+  it("reports presence reading activity through IPC", async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true });
+    const bridge = createRendererPetBridge({ on: vi.fn(), invoke } as any);
+
+    await bridge.setPresenceActivity({ userIsReading: true });
+
+    expect(invoke).toHaveBeenCalledWith("presence:set-activity", { userIsReading: true });
+  });
 });
