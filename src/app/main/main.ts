@@ -20,6 +20,7 @@ import { loadRelationshipMemory } from "./memory/relationshipStore.js";
 import { deriveMoodState } from "./moodEngine.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
 import { maybeCreatePresencePulse } from "./presenceService.js";
+import { applyPresenceActivityInput, hasLongWorkSession, updateWorkSession, type PresenceRuntimeState } from "./presenceRuntime.js";
 import { createTray, openPath } from "./tray.js";
 
 const bridgePort = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
@@ -32,6 +33,7 @@ let latestStatus: UpdatePetStatusInput = {
   source: "cline",
   updatedAt: new Date().toISOString()
 };
+let presenceRuntime: PresenceRuntimeState = { userIsReading: false };
 
 function toFileUrl(filePath: string) {
   return pathToFileURL(filePath).toString();
@@ -89,6 +91,10 @@ function showPetWindow(win: Electron.BrowserWindow) {
 
 function notifyRenderer(win: Electron.BrowserWindow, payload: UpdatePetStatusInput) {
   latestStatus = { ...payload, updatedAt: payload.updatedAt ?? new Date().toISOString() };
+  presenceRuntime = updateWorkSession(presenceRuntime, {
+    visibleStatus: latestStatus.visibleStatus ?? latestStatus.status,
+    now: latestStatus.updatedAt ?? new Date().toISOString()
+  });
   win.webContents.send("pet-status", latestStatus);
 }
 
@@ -130,6 +136,11 @@ app.whenReady().then(async () => {
     const bounds = win.getBounds();
     win.setPosition(Math.round(bounds.x + dx), Math.round(bounds.y + dy), false);
     return { ok: true };
+  });
+  ipcMain.handle("presence:set-activity", (_event, payload: unknown) => {
+    const update = applyPresenceActivityInput(presenceRuntime, payload);
+    presenceRuntime = update.state;
+    return update.response;
   });
   ipcMain.handle("interaction:head-pat", (_event, payload: HeadPatInteractionInput) => {
     const result = recordHeadPatInteraction(appDataBaseDir, payload ?? {});
@@ -197,7 +208,9 @@ app.whenReady().then(async () => {
       now,
       lastPresenceAt,
       latestVisibleStatus: latestStatus.visibleStatus,
-      mood: mood.name
+      mood: mood.name,
+      userIsReading: presenceRuntime.userIsReading,
+      longWorkSession: hasLongWorkSession(presenceRuntime, { now })
     });
 
     if (pulse) {
