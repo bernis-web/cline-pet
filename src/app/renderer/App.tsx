@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { PetStatus } from "../../shared/statuses";
+import { ChatHistoryPanel } from "./ChatHistoryPanel";
 import { DeepSeekSettingsPanel } from "./DeepSeekSettingsPanel";
 import { PetView } from "./PetView";
 import { bubbleFromChat, bubbleFromNotice, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
 import { enqueueBubble, makeBubbleReadable, popNextBubble } from "./bubbleQueue";
-import type { DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, RendererPetPack } from "./petBridge";
+import type { RendererChatHistoryTurn } from "./chatHistoryTypes";
+import type { ChatHistoryResponse, ClearChatHistoryResponse, DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, RendererPetPack } from "./petBridge";
 import idleImage from "../../assets/default-pet/idle.svg";
 import thinkingImage from "../../assets/default-pet/thinking.svg";
 import workingImage from "../../assets/default-pet/working.svg";
@@ -19,6 +21,8 @@ declare global {
       onPetPack(callback: (payload: RendererPetPack) => void): void;
       getPetPack?(): Promise<RendererPetPack>;
       sendChatMessage?(text: string): Promise<{ ok: true; text: string } | { ok: false; errorCode: string; message: string }>;
+      getChatHistory?(): Promise<ChatHistoryResponse>;
+      clearChatHistory?(): Promise<ClearChatHistoryResponse>;
       getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
       saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
       movePetWindowBy?(dx: number, dy: number): Promise<{ ok: boolean; message?: string }>;
@@ -50,6 +54,9 @@ export function App() {
   const [bubbleState, setBubbleState] = useState<{ current: BubbleMessage | null; queue: BubbleMessage[] }>({ current: null, queue: [] });
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPending, setChatPending] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyPending, setHistoryPending] = useState(false);
+  const [chatHistory, setChatHistory] = useState<RendererChatHistoryTurn[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsPending, setSettingsPending] = useState(false);
   const [deepSeekSettings, setDeepSeekSettings] = useState<DeepSeekSettings | null>(null);
@@ -121,6 +128,37 @@ export function App() {
     }
   }
 
+  async function refreshChatHistory() {
+    setHistoryPending(true);
+    const result = await window.clinePet?.getChatHistory?.();
+    setHistoryPending(false);
+    if (!result) return;
+    if (result.ok) {
+      setChatHistory(result.data);
+    } else {
+      pushBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function openChatHistory() {
+    setHistoryOpen(true);
+    await refreshChatHistory();
+  }
+
+  async function clearChatHistoryFromPanel() {
+    const confirmed = typeof window.confirm === "function" ? window.confirm("清空本地对话历史？") : true;
+    if (!confirmed) return;
+    setHistoryPending(true);
+    const result = await window.clinePet?.clearChatHistory?.();
+    setHistoryPending(false);
+    if (!result) return;
+    if (result.ok) {
+      setChatHistory([]);
+    } else {
+      pushBubble(bubbleFromNotice(result.message));
+    }
+  }
+
   async function sendChat(text: string) {
     setChatPending(true);
     pushBubble({
@@ -144,6 +182,7 @@ export function App() {
     if (result.ok) {
       pushBubble(bubbleFromChat(result.text));
       setChatOpen(false);
+      void refreshChatHistory();
     } else {
       if (result.errorCode === "DEEPSEEK_API_KEY_MISSING") {
         setSettingsOpen(true);
@@ -185,6 +224,7 @@ export function App() {
         chatOpen={chatOpen}
         chatPending={chatPending}
         onStartChat={() => setChatOpen((open) => !open)}
+        onOpenHistory={openChatHistory}
         onOpenReadableBubble={() => setBubbleState((state) => state.current ? { ...state, current: makeBubbleReadable(state.current) } : state)}
         onCloseBubble={() => setBubbleState((state) => popNextBubble({ current: null, queue: state.queue }))}
         onOpenSettings={openDeepSeekSettings}
@@ -208,6 +248,7 @@ export function App() {
         onChatSubmit={sendChat}
         onChatCancel={() => setChatOpen(false)}
       />
+      <ChatHistoryPanel open={historyOpen} pending={historyPending} turns={chatHistory} onClose={() => setHistoryOpen(false)} onClear={clearChatHistoryFromPanel} />
       <DeepSeekSettingsPanel open={settingsOpen} pending={settingsPending} settings={deepSeekSettings} onSave={saveDeepSeekSettings} onCancel={() => setSettingsOpen(false)} />
     </>
   );

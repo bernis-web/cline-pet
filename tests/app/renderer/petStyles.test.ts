@@ -17,4 +17,11 @@ describe("pet renderer styles", () => {
     expect(styles).toContain("width: calc(100% - 24px)");
     expect(styles).toContain("bottom: 12px");
   });
+
+  it("includes history trigger and overlay panel styles", () => {
+    expect(styles).toContain(".chat-history-trigger");
+    expect(styles).toContain("top: 14px");
+    expect(styles).toContain(".chat-history-panel");
+    expect(styles).toContain("inset: 12px");
+  });
 });

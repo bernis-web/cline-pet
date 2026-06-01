@@ -141,6 +141,44 @@ describe("renderer App", () => {
     expect(document.querySelector(".speech-bubble")).toBeNull();
   });
 
+  it("opens the chat history panel and loads stored conversations", async () => {
+    const getChatHistory = vi.fn().mockResolvedValue({
+      ok: true,
+      data: [{
+        id: "t1",
+        userText: "今天好累",
+        assistantText: "先喝口水，我在旁边陪你。",
+        createdAt: "2026-06-01T01:00:00.000Z",
+        sentiment: "tired",
+        memoryIds: []
+      }]
+    });
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      getChatHistory,
+      clearChatHistory: vi.fn().mockResolvedValue({ ok: true })
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (document.querySelector(".chat-history-trigger") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+
+    expect(getChatHistory).toHaveBeenCalledOnce();
+    expect(document.querySelector(".chat-history-panel")?.textContent).toContain("今天好累");
+  });
+
   it("applies motion class for visible status", async () => {
     let statusHandler: ((payload: any) => void) | null = null;
     (window as any).clinePet = {
