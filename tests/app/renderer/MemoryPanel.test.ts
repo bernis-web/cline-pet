@@ -46,7 +46,9 @@ function renderPanel(props: Partial<React.ComponentProps<typeof MemoryPanel>> = 
     onClose: vi.fn(),
     onDelete: vi.fn(),
     onClear: vi.fn(),
-    onExport: vi.fn()
+    onExport: vi.fn(),
+    onUpdate: vi.fn(),
+    onBlock: vi.fn()
   };
   act(() => {
     root.render(React.createElement(MemoryPanel, {
@@ -115,6 +117,54 @@ describe("MemoryPanel", () => {
     const { rootElement } = renderPanel({ overview: { ...overview, memories: [] } });
 
     expect(rootElement.querySelector(".memory-empty")?.textContent).toContain("卡卡还没有长期记忆");
+  });
+
+  it("edits a memory inline and calls onUpdate", async () => {
+    const { rootElement, callbacks } = renderPanel();
+
+    await act(async () => {
+      (rootElement.querySelector('[data-memory-edit="m1"]') as HTMLButtonElement).click();
+    });
+    const editor = rootElement.querySelector('textarea[name="memoryEditText"]') as HTMLTextAreaElement;
+    expect(editor.value).toBe("用户喜欢温柔提醒");
+
+    await act(async () => {
+      editor.value = "用户喜欢安静温柔的提醒";
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+      (rootElement.querySelector(".memory-edit-save") as HTMLButtonElement).click();
+    });
+
+    expect(callbacks.onUpdate).toHaveBeenCalledWith("m1", "用户喜欢安静温柔的提醒");
+  });
+
+  it("cancels editing without saving and disables empty save", async () => {
+    const { rootElement, callbacks } = renderPanel();
+
+    await act(async () => {
+      (rootElement.querySelector('[data-memory-edit="m1"]') as HTMLButtonElement).click();
+    });
+    const editor = rootElement.querySelector('textarea[name="memoryEditText"]') as HTMLTextAreaElement;
+    await act(async () => {
+      editor.value = "   ";
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect((rootElement.querySelector(".memory-edit-save") as HTMLButtonElement).disabled).toBe(true);
+
+    await act(async () => {
+      (rootElement.querySelector(".memory-edit-cancel") as HTMLButtonElement).click();
+    });
+    expect(rootElement.querySelector('textarea[name="memoryEditText"]')).toBeNull();
+    expect(callbacks.onUpdate).not.toHaveBeenCalled();
+  });
+
+  it("fires the block callback from the do-not-remember action", async () => {
+    const { rootElement, callbacks } = renderPanel();
+
+    await act(async () => {
+      (rootElement.querySelector('[data-memory-block="m1"]') as HTMLButtonElement).click();
+    });
+
+    expect(callbacks.onBlock).toHaveBeenCalledWith("m1");
   });
 
   it("renders nothing while closed", () => {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { MemoryOverview, RendererContextMemory } from "./memoryTypes";
 
 export type MemoryPanelProps = {
@@ -9,6 +9,8 @@ export type MemoryPanelProps = {
   onDelete(id: string): void;
   onClear(): void;
   onExport(): void;
+  onUpdate(id: string, text: string): void;
+  onBlock(id: string): void;
 };
 
 const kindLabels: Record<RendererContextMemory["kind"], string> = {
@@ -22,9 +24,12 @@ function formatTime(value: string) {
   return new Date(value).toLocaleString();
 }
 
-export function MemoryPanel({ open, pending, overview, onClose, onDelete, onClear, onExport }: MemoryPanelProps) {
+export function MemoryPanel({ open, pending, overview, onClose, onDelete, onClear, onExport, onUpdate, onBlock }: MemoryPanelProps) {
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<"all" | RendererContextMemory["kind"]>("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const editingTextRef = useRef("");
 
   const memories = overview?.memories ?? [];
   const filtered = useMemo(() => {
@@ -36,6 +41,32 @@ export function MemoryPanel({ open, pending, overview, onClose, onDelete, onClea
       return matchesKind && matchesQuery;
     });
   }, [kind, memories, query]);
+
+  function startEditing(memory: RendererContextMemory) {
+    setEditingId(memory.id);
+    setEditingText(memory.text);
+    editingTextRef.current = memory.text;
+  }
+
+  function saveEditing(memory: RendererContextMemory) {
+    const nextText = editingTextRef.current.trim();
+    if (!nextText) return;
+    onUpdate(memory.id, nextText);
+    setEditingId(null);
+    setEditingText("");
+    editingTextRef.current = "";
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+    setEditingText("");
+    editingTextRef.current = "";
+  }
+
+  function updateEditingText(value: string) {
+    editingTextRef.current = value;
+    setEditingText(value);
+  }
 
   if (!open) return null;
 
@@ -86,9 +117,29 @@ export function MemoryPanel({ open, pending, overview, onClose, onDelete, onClea
                 <span className="memory-kind">{kindLabels[memory.kind]}</span>
                 <time>{formatTime(memory.updatedAt)}</time>
               </div>
-              <p>{memory.text}</p>
+              {editingId === memory.id ? (
+                <div className="memory-editor">
+                  <textarea
+                    name="memoryEditText"
+                    value={editingText}
+                    disabled={pending}
+                    onInput={(event) => updateEditingText((event.currentTarget as HTMLTextAreaElement).value)}
+                    aria-label="编辑长期记忆"
+                  />
+                  <div className="memory-editor-actions">
+                    <button className="memory-edit-save" type="button" disabled={pending || editingText.trim().length === 0} onClick={() => saveEditing(memory)}>保存</button>
+                    <button className="memory-edit-cancel" type="button" disabled={pending} onClick={cancelEditing}>取消</button>
+                  </div>
+                </div>
+              ) : (
+                <p>{memory.text}</p>
+              )}
               <small>weight {memory.weight}{memory.tags.length > 0 ? ` · ${memory.tags.join(" · ")}` : ""}</small>
-              <button className="memory-delete" data-memory-delete={memory.id} type="button" disabled={pending} onClick={() => onDelete(memory.id)}>删除</button>
+              <div className="memory-item-actions">
+                <button className="memory-edit" data-memory-edit={memory.id} type="button" disabled={pending} onClick={() => startEditing(memory)}>编辑</button>
+                <button className="memory-block" data-memory-block={memory.id} type="button" disabled={pending} onClick={() => onBlock(memory.id)}>不要再记</button>
+                <button className="memory-delete" data-memory-delete={memory.id} type="button" disabled={pending} onClick={() => onDelete(memory.id)}>删除</button>
+              </div>
             </li>
           ))}
         </ol>
