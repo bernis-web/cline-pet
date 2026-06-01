@@ -26,4 +26,23 @@ describe("chat mood status", () => {
       updatedAt: "2026-05-31T15:30:00.000Z"
     });
   });
+
+  it("uses focused chat sentiment when creating the visible pet status", () => {
+    const status = createChatMoodStatus({
+      now: "2026-06-01T12:00:00.000Z",
+      latestVisibleStatus: "idle",
+      sentiment: "focused",
+      memoryHitCount: 1,
+      relationship: {
+        familiarity: 20,
+        affection: 20,
+        engagement: 80,
+        trust: 20,
+        recentEvents: [],
+        updatedAt: "2026-06-01T11:59:00.000Z"
+      }
+    });
+
+    expect(status).toEqual(expect.objectContaining({ status: "thinking", source: "chat" }));
+  });
 });

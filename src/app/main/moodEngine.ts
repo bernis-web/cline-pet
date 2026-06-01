@@ -8,6 +8,8 @@ export type MoodState = {
   suggestedStatus: PetStatus;
 };
 
+export type ChatSentiment = "positive" | "neutral" | "negative" | "tired" | "stressed" | "focused";
+
 function hasActiveWarmth(relationship: RelationshipMemory, now: string) {
   if (!relationship.recentWarmth) return false;
   return new Date(relationship.recentWarmth.expiresAt).getTime() > new Date(now).getTime();
@@ -17,7 +19,7 @@ export function deriveMoodState(input: {
   now: string;
   relationship: RelationshipMemory;
   hasRecentChat: boolean;
-  lastChatSentiment: "positive" | "neutral" | "negative";
+  lastChatSentiment: ChatSentiment;
   memoryHitCount: number;
   clineVisibleStatus: PetStatus;
 }): MoodState {
@@ -26,6 +28,14 @@ export function deriveMoodState(input: {
 
   if (input.clineVisibleStatus === "loading" || input.clineVisibleStatus === "thinking") {
     return { name: "curious", suggestedStatus: input.clineVisibleStatus };
+  }
+
+  if (input.lastChatSentiment === "stressed") {
+    return { name: "calm", suggestedStatus: "idle" };
+  }
+
+  if (input.lastChatSentiment === "focused" && input.hasRecentChat) {
+    return { name: "curious", suggestedStatus: "thinking" };
   }
 
   if (!input.hasRecentChat && (hour >= 23 || hour < 6)) {
@@ -41,6 +51,10 @@ export function deriveMoodState(input: {
 
   if (input.lastChatSentiment === "positive" && input.hasRecentChat) {
     return { name: "happy", suggestedStatus: "happy" };
+  }
+
+  if (input.lastChatSentiment === "tired") {
+    return { name: "sleepy", suggestedStatus: "sleepy" };
   }
 
   if (input.memoryHitCount >= 2 && input.relationship.affection >= 50) {

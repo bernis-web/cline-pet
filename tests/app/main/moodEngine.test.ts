@@ -116,4 +116,26 @@ describe("mood engine", () => {
 
     expect(mood).toEqual({ name: "upset", suggestedStatus: "angry" });
   });
+
+  it("keeps stressed users in a calm supportive mood instead of angry", () => {
+    expect(deriveMoodState({
+      now: "2026-06-01T12:00:00.000Z",
+      relationship: { familiarity: 10, affection: 10, engagement: 10, trust: 10, recentEvents: [], updatedAt: "2026-06-01T00:00:00.000Z" },
+      hasRecentChat: true,
+      lastChatSentiment: "stressed",
+      memoryHitCount: 0,
+      clineVisibleStatus: "idle"
+    })).toEqual({ name: "calm", suggestedStatus: "idle" });
+  });
+
+  it("shows curiosity during focused work sessions", () => {
+    expect(deriveMoodState({
+      now: "2026-06-01T12:00:00.000Z",
+      relationship: { familiarity: 10, affection: 10, engagement: 80, trust: 10, recentEvents: [], updatedAt: "2026-06-01T00:00:00.000Z" },
+      hasRecentChat: true,
+      lastChatSentiment: "focused",
+      memoryHitCount: 1,
+      clineVisibleStatus: "idle"
+    })).toEqual({ name: "curious", suggestedStatus: "thinking" });
+  });
 });
