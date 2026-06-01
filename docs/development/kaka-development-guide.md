@@ -154,6 +154,16 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - main 侧通过 `memoryManagementService` 复用 `contextStore` / `relationshipStore`，IPC 通道为 `memory:get-overview`、`memory:delete`、`memory:clear`、`memory:export`。
 - 本功能不读取文件、屏幕、终端、浏览器数据、日志、API key 或外部用户数据；只展示和操作卡卡自己已有的本地长期记忆。
 
+## Cyber Life v2.2
+
+- 设计文档：`docs/superpowers/specs/2026-06-01-kaka-cyber-life-v2-2-memory-correction-design.md`。
+- 实现计划：`docs/superpowers/plans/2026-06-01-kaka-cyber-life-v2-2-memory-correction-implementation.md`。
+- `MemoryPanel` 在每条长期记忆上新增 `编辑` 和 `不要再记`。
+- `编辑` 只修改长期记忆的 `text` 和 `updatedAt`，保留 id/kind/tags/weight/createdAt。
+- `不要再记` 会删除当前长期记忆，并写入 `%APPDATA%/cline-desktop-pet/memory-blocklist.json`。
+- DeepSeek 记忆提炼在写入 `context-memory.jsonl` 前会过滤已禁止或高度相似的同类候选记忆。
+- 删除和清空长期记忆仍不影响 `chat-history.jsonl`；清空长期记忆也不会清空 blocklist，因为“不要再记”是用户的隐私偏好。
+
 ## 资源包
 
 资源包根目录：
@@ -184,6 +194,7 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - `profile.json`：用户档案记忆。
 - `relationship.json`：关系/短期 warmth 记忆。
 - `context-memory.jsonl`：上下文记忆。
+- `memory-blocklist.json`：用户选择“不要再记”后生成的本地禁止记忆规则。
 - `chat-history.jsonl`：最近原始聊天轮次。
 - `logs/`：App/MCP 日志。
 

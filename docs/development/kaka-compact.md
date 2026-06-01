@@ -13,14 +13,14 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 
 ## Latest important commit
 
-- `e73c8c1 feat: integrate Kaka memory controls`
-- `25c2f14 feat: add Kaka memory panel`
-- `04ac00e feat: expose memory management bridge`
-- `0ee8e5e feat: add memory management service`
-- `f31b8b1 docs: add Kaka Cyber Life v2 memory plan`
-- `01f8909 feat: wire Kaka presence runtime`
-- `ae6515b feat: report Kaka readable chat activity`
-- `016433e feat: add presence activity bridge`
+- `a89a3f4 feat: integrate memory correction flows`
+- `3e23087 feat: add memory correction controls`
+- `27eb91d feat: expose memory correction bridge`
+- `3e32359 feat: filter blocked memory extraction`
+- `2366fd7 feat: add memory correction service`
+- `b885919 feat: add memory blocklist store`
+- `cda5c83 docs: add Kaka memory correction plan`
+- `7840638 docs: add Kaka memory correction design`
 
 ## What is already built
 
@@ -30,11 +30,12 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Local Bridge: `127.0.0.1:37621/status` and `/diagnostics`.
 - Kaka local PNG installer: `scripts/install-kaka-pet-pack.ps1` copies assets to `%APPDATA%/cline-desktop-pet/pets/kaka-desktop-pet/`.
 - DeepSeek chat settings via right-click; config stored locally in `%APPDATA%/cline-desktop-pet/config.json`.
-- Local memory files: `profile.json`, `relationship.json`, `context-memory.jsonl`.
+- Local memory files: `profile.json`, `relationship.json`, `context-memory.jsonl`, `memory-blocklist.json`.
 - Local chat history file: `chat-history.jsonl`.
 - Mood/pose/presence/head-pat modules exist.
 - Renderer supports bubbles, auto-hide, readable long chat bubbles, chat history panel, drag, double-click chat, right-click settings, long-press head-pat.
 - Cyber Life v2.1 memory controls: `记忆` panel for viewing/searching/filtering/deleting/clearing/exporting long-term memories from `context-memory.jsonl`.
+- Cyber Life v2.2 memory correction: users can edit long-term memory text and mark a memory as `不要再记`; blocked/similar future extraction candidates are filtered before writing `context-memory.jsonl`.
 - Relationship overview: `初识` / `熟悉` / `亲近` / `信赖` derived from familiarity, affection, engagement, and trust scores in `relationship.json`.
 - Presence runtime now receives readable long-chat activity from the renderer and treats continuous `loading` / `thinking` over 90 minutes as a long-work care opportunity.
 
@@ -55,6 +56,7 @@ src/app/main/poseResolver.ts
 src/app/main/presenceService.ts
 src/app/main/interaction/headPatService.ts
 src/app/main/memory/*
+src/app/main/memory/memoryBlocklistStore.ts
 src/app/main/memory/memoryManagementService.ts
 src/app/renderer/App.tsx
 src/app/renderer/PetView.tsx
@@ -118,8 +120,8 @@ If these work but Cline tool calls do not, rerun integration and reload VS Code/
 
 ## Likely next tasks
 
-1. Review and merge the Cyber Life v1/v2.1 PR after GitHub checks/review.
-2. Add memory editing or “不要再记” controls from chat/history UI.
-3. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
-4. Consider richer relationship/profile UI with recent positive events.
-5. Explore richer proactive rhythms after memory controls prove stable.
+1. Add blocklist management UI for reviewing or removing `不要再记` rules.
+2. Add history-level `不要再记` actions from chat/history UI.
+3. Consider richer relationship/profile UI with recent positive events.
+4. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
+5. Explore richer proactive rhythms after memory correction proves stable.

@@ -295,6 +295,69 @@ body,
   color: #111827;
 }
 
+.memory-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.memory-edit,
+.memory-block,
+.memory-delete {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.memory-block {
+  border-color: rgba(255, 185, 120, 0.45);
+  color: #ffd7ad;
+}
+
+.memory-editor {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.memory-editor textarea {
+  min-height: 58px;
+  resize: vertical;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  padding: 8px;
+  font: inherit;
+}
+
+.memory-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.memory-edit-save,
+.memory-edit-cancel {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.memory-edit-save {
+  background: rgba(128, 219, 180, 0.24);
+  color: #d9ffe9;
+}
+
+.memory-edit-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.82);
+}
+
 .memory-list {
   margin: 0;
   padding: 0;

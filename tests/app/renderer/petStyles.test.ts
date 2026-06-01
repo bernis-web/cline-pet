@@ -25,11 +25,15 @@ describe("pet renderer styles", () => {
     expect(styles).toContain("inset: 12px");
   });
 
-  it("includes memory trigger, relationship overview, and memory list styles", () => {
+  it("includes memory trigger, relationship overview, memory list, and correction styles", () => {
     expect(styles).toContain(".memory-trigger");
     expect(styles).toContain(".memory-panel");
     expect(styles).toContain(".relationship-card");
     expect(styles).toContain(".memory-list");
     expect(styles).toContain(".memory-delete");
+    expect(styles).toContain(".memory-edit");
+    expect(styles).toContain(".memory-block");
+    expect(styles).toContain(".memory-editor");
+    expect(styles).toContain(".memory-editor-actions");
   });
 });
