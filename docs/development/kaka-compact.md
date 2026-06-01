@@ -13,12 +13,14 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 
 ## Latest important commit
 
+- `e73c8c1 feat: integrate Kaka memory controls`
+- `25c2f14 feat: add Kaka memory panel`
+- `04ac00e feat: expose memory management bridge`
+- `0ee8e5e feat: add memory management service`
+- `f31b8b1 docs: add Kaka Cyber Life v2 memory plan`
 - `01f8909 feat: wire Kaka presence runtime`
 - `ae6515b feat: report Kaka readable chat activity`
 - `016433e feat: add presence activity bridge`
-- `7393eae feat: add Kaka presence runtime`
-- `88f69d4 docs: add kaka cyber life v1 finish plan`
-- `54e456d docs: add kaka cyber life v1 finish design`
 
 ## What is already built
 
@@ -32,6 +34,8 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Local chat history file: `chat-history.jsonl`.
 - Mood/pose/presence/head-pat modules exist.
 - Renderer supports bubbles, auto-hide, readable long chat bubbles, chat history panel, drag, double-click chat, right-click settings, long-press head-pat.
+- Cyber Life v2.1 memory controls: `记忆` panel for viewing/searching/filtering/deleting/clearing/exporting long-term memories from `context-memory.jsonl`.
+- Relationship overview: `初识` / `熟悉` / `亲近` / `信赖` derived from familiarity, affection, engagement, and trust scores in `relationship.json`.
 - Presence runtime now receives readable long-chat activity from the renderer and treats continuous `loading` / `thinking` over 90 minutes as a long-work care opportunity.
 
 ## Main files to know
@@ -51,8 +55,10 @@ src/app/main/poseResolver.ts
 src/app/main/presenceService.ts
 src/app/main/interaction/headPatService.ts
 src/app/main/memory/*
+src/app/main/memory/memoryManagementService.ts
 src/app/renderer/App.tsx
 src/app/renderer/PetView.tsx
+src/app/renderer/MemoryPanel.tsx
 src/app/renderer/bubbleTypes.ts
 src/app/renderer/petStyles.css
 ```
@@ -112,8 +118,8 @@ If these work but Cline tool calls do not, rerun integration and reload VS Code/
 
 ## Likely next tasks
 
-1. Review and merge the Cyber Life v1 PR after GitHub checks/review.
-2. Start Cyber Life v2 design: richer mood transitions, user-visible memory controls, and relationship/profile UI.
+1. Review and merge the Cyber Life v1/v2.1 PR after GitHub checks/review.
+2. Add memory editing or “不要再记” controls from chat/history UI.
 3. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
-4. Add export/clear controls for memory files beyond raw chat history.
-5. Consider richer proactive rhythms after v1 proves stable.
+4. Consider richer relationship/profile UI with recent positive events.
+5. Explore richer proactive rhythms after memory controls prove stable.

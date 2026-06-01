@@ -143,6 +143,17 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - DeepSeek 记忆提炼只发送聊天文本和紧凑记忆摘要，不自动读取文件、代码、屏幕、终端输出或日志。
 - Cyber Life v1 范围：可阅读长回复、历史面板、记忆闭环、关系成长、低频主动陪伴、气泡队列。
 
+## Cyber Life v2.1
+
+- 设计文档：`docs/superpowers/specs/2026-06-01-kaka-cyber-life-v2-memory-design.md`。
+- 实现计划：`docs/superpowers/plans/2026-06-01-kaka-cyber-life-v2-memory-implementation.md`。
+- 渲染层新增 `MemoryPanel`，从主界面右上角 `记忆` 按钮打开。
+- 关系概览读取 `relationship.json`，展示 familiarity / affection / engagement / trust，并按平均分派生阶段：`初识`、`熟悉`、`亲近`、`信赖`。
+- 长期记忆列表读取 `context-memory.jsonl`，支持搜索、按类型筛选、删除单条、清空全部、复制导出 JSON。
+- 长期记忆操作不会清空 `chat-history.jsonl`；聊天历史和长期记忆是两个独立的用户动作。
+- main 侧通过 `memoryManagementService` 复用 `contextStore` / `relationshipStore`，IPC 通道为 `memory:get-overview`、`memory:delete`、`memory:clear`、`memory:export`。
+- 本功能不读取文件、屏幕、终端、浏览器数据、日志、API key 或外部用户数据；只展示和操作卡卡自己已有的本地长期记忆。
+
 ## 资源包
 
 资源包根目录：
