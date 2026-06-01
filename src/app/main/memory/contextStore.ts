@@ -31,3 +31,10 @@ export function appendContextMemory(root: string, input: NewContextMemory): Cont
   writeFileSync(file, `${current}${prefix}${JSON.stringify(item)}`, "utf8");
   return item;
 }
+
+export function writeContextMemories(root: string, items: ContextMemoryItem[]) {
+  const file = getPaths({ APPDATA: root } as NodeJS.ProcessEnv).contextMemoryFile;
+  mkdirSync(dirname(file), { recursive: true });
+  const body = items.map((item) => JSON.stringify(item)).join("\n");
+  writeFileSync(file, body ? `${body}\n` : "", "utf8");
+}
