@@ -24,6 +24,12 @@ import {
   getMemoryOverview,
   updateContextMemoryForUser
 } from "./memory/memoryManagementService.js";
+import {
+  clearMemoryBlockRulesForUser,
+  deleteMemoryBlockRuleForUser,
+  exportPrivacyDataForUser,
+  getPrivacyOverview
+} from "./memory/privacyManagementService.js";
 import { loadRelationshipMemory } from "./memory/relationshipStore.js";
 import { deriveMoodState } from "./moodEngine.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
@@ -202,6 +208,10 @@ app.whenReady().then(async () => {
   ipcMain.handle("memory:export", () => exportContextMemoriesForUser(appDataBaseDir));
   ipcMain.handle("memory:update", (_event, payload: { id?: string; text?: string }) => updateContextMemoryForUser(appDataBaseDir, { id: payload?.id ?? "", text: payload?.text ?? "" }));
   ipcMain.handle("memory:block", (_event, payload: { id?: string }) => blockContextMemoryForUser(appDataBaseDir, { id: payload?.id ?? "" }));
+  ipcMain.handle("privacy:get-overview", () => ({ ok: true, data: getPrivacyOverview(appDataBaseDir) }));
+  ipcMain.handle("privacy:export", () => exportPrivacyDataForUser(appDataBaseDir));
+  ipcMain.handle("memory-blocklist:delete", (_event, payload: { id?: string }) => deleteMemoryBlockRuleForUser(appDataBaseDir, payload?.id ?? ""));
+  ipcMain.handle("memory-blocklist:clear", () => clearMemoryBlockRulesForUser(appDataBaseDir));
   await win.loadURL(rendererUrl);
   sendSelectedPack();
   showPetWindow(win);

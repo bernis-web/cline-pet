@@ -65,4 +65,23 @@ describe("renderer pet bridge", () => {
     expect(invoke).toHaveBeenNthCalledWith(5, "memory:update", { id: "memory-1", text: "修正后的记忆" });
     expect(invoke).toHaveBeenNthCalledWith(6, "memory:block", { id: "memory-1" });
   });
+
+  it("manages unified privacy data through IPC", async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce({ ok: true, data: { counts: { memories: 0, blockRules: 0, chatHistoryTurns: 0 }, memories: [], blockRules: [], chatHistory: [] } })
+      .mockResolvedValueOnce({ ok: true, data: "{}" })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true });
+    const bridge = createRendererPetBridge({ on: vi.fn(), invoke } as any);
+
+    await bridge.getPrivacyOverview();
+    await bridge.exportPrivacyData();
+    await bridge.deleteMemoryBlockRule("rule-1");
+    await bridge.clearMemoryBlockRules();
+
+    expect(invoke).toHaveBeenNthCalledWith(1, "privacy:get-overview");
+    expect(invoke).toHaveBeenNthCalledWith(2, "privacy:export");
+    expect(invoke).toHaveBeenNthCalledWith(3, "memory-blocklist:delete", { id: "rule-1" });
+    expect(invoke).toHaveBeenNthCalledWith(4, "memory-blocklist:clear");
+  });
 });

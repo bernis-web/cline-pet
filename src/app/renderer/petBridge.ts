@@ -80,6 +80,36 @@ export type ExportMemoriesResponse =
   | { ok: true; data: string }
   | { ok: false; errorCode: string; message: string };
 
+export type RendererMemoryBlockRule = {
+  id: string;
+  text: string;
+  kind?: RendererContextMemory["kind"];
+  sourceMemoryId?: string;
+  createdAt: string;
+};
+
+export type PrivacyOverview = MemoryOverview & {
+  blockRules: RendererMemoryBlockRule[];
+  chatHistory: RendererChatHistoryTurn[];
+  counts: {
+    memories: number;
+    blockRules: number;
+    chatHistoryTurns: number;
+  };
+};
+
+export type PrivacyOverviewResponse =
+  | { ok: true; data: PrivacyOverview }
+  | { ok: false; errorCode: string; message: string };
+
+export type PrivacyExportResponse =
+  | { ok: true; data: string }
+  | { ok: false; errorCode: string; message: string };
+
+export type BlockRuleMutationResponse =
+  | { ok: true }
+  | { ok: false; errorCode: string; message: string };
+
 export type PresenceActivityInput = {
   userIsReading?: boolean;
 };
@@ -130,6 +160,10 @@ export type IpcLike = {
   invoke(channel: "memory:export"): Promise<ExportMemoriesResponse>;
   invoke(channel: "memory:update", payload: { id: string; text: string }): Promise<UpdateMemoryResponse>;
   invoke(channel: "memory:block", payload: { id: string }): Promise<BlockMemoryResponse>;
+  invoke(channel: "privacy:get-overview"): Promise<PrivacyOverviewResponse>;
+  invoke(channel: "privacy:export"): Promise<PrivacyExportResponse>;
+  invoke(channel: "memory-blocklist:delete", payload: { id: string }): Promise<BlockRuleMutationResponse>;
+  invoke(channel: "memory-blocklist:clear"): Promise<BlockRuleMutationResponse>;
   invoke(channel: "presence:set-activity", payload: PresenceActivityInput): Promise<PresenceActivityResponse>;
   invoke(channel: "deepseek:get-settings"): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "deepseek:save-settings", payload: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -174,6 +208,18 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     blockMemory(id: string) {
       return ipc.invoke("memory:block", { id });
+    },
+    getPrivacyOverview() {
+      return ipc.invoke("privacy:get-overview");
+    },
+    exportPrivacyData() {
+      return ipc.invoke("privacy:export");
+    },
+    deleteMemoryBlockRule(id: string) {
+      return ipc.invoke("memory-blocklist:delete", { id });
+    },
+    clearMemoryBlockRules() {
+      return ipc.invoke("memory-blocklist:clear");
     },
     setPresenceActivity(input: PresenceActivityInput) {
       return ipc.invoke("presence:set-activity", input);
