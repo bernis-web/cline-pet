@@ -8,7 +8,7 @@ import { bubbleFromChat, bubbleFromNotice, bubbleFromStatus, type BubbleMessage 
 import { enqueueBubble, makeBubbleReadable, popNextBubble } from "./bubbleQueue";
 import type { RendererChatHistoryTurn } from "./chatHistoryTypes";
 import type { MemoryOverview } from "./memoryTypes";
-import type { ChatHistoryResponse, ClearChatHistoryResponse, ClearMemoriesResponse, DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, DeleteMemoryResponse, ExportMemoriesResponse, MemoryOverviewResponse, RendererPetPack } from "./petBridge";
+import type { BlockMemoryResponse, ChatHistoryResponse, ClearChatHistoryResponse, ClearMemoriesResponse, DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, DeleteMemoryResponse, ExportMemoriesResponse, MemoryOverviewResponse, RendererPetPack, UpdateMemoryResponse } from "./petBridge";
 import idleImage from "../../assets/default-pet/idle.svg";
 import thinkingImage from "../../assets/default-pet/thinking.svg";
 import workingImage from "../../assets/default-pet/working.svg";
@@ -29,6 +29,8 @@ declare global {
       deleteMemory?(id: string): Promise<DeleteMemoryResponse>;
       clearMemories?(): Promise<ClearMemoriesResponse>;
       exportMemories?(): Promise<ExportMemoriesResponse>;
+      updateMemory?(id: string, text: string): Promise<UpdateMemoryResponse>;
+      blockMemory?(id: string): Promise<BlockMemoryResponse>;
       setPresenceActivity?(input: { userIsReading?: boolean }): Promise<{ ok: true } | { ok: false; message: string }>;
       getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
       saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -78,6 +80,13 @@ export function App() {
   function pushBubble(next: BubbleMessage | null) {
     if (!next) return;
     setBubbleState((state) => enqueueBubble(state, next));
+  }
+
+  function pushReplacingNotice(text: string) {
+    const notice = bubbleFromNotice(text);
+    setBubbleState((state) => state.current?.kind === "notice"
+      ? { current: notice, queue: state.queue.filter((item) => item.kind !== "notice") }
+      : enqueueBubble(state, notice));
   }
 
   function applyPack(payload: RendererPetPack) {
@@ -202,6 +211,45 @@ export function App() {
     }
     if (result.ok) {
       setMemoryOverview((current) => current ? { ...current, memories: current.memories.filter((memory) => memory.id !== id) } : current);
+    } else {
+      pushBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function updateMemoryFromPanel(id: string, text: string) {
+    const confirmed = typeof window.confirm === "function" ? window.confirm("保存这条长期记忆的修改？") : true;
+    if (!confirmed) return;
+    setMemoryPending(true);
+    const result = await window.clinePet?.updateMemory?.(id, text);
+    setMemoryPending(false);
+    if (!result) {
+      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      return;
+    }
+    if (result.ok) {
+      setMemoryOverview((current) => current ? {
+        ...current,
+        memories: current.memories.map((memory) => memory.id === id ? result.data : memory)
+      } : current);
+      pushReplacingNotice("我记住修正啦。");
+    } else {
+      pushBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function blockMemoryFromPanel(id: string) {
+    const confirmed = typeof window.confirm === "function" ? window.confirm("删除这条长期记忆，并让卡卡以后不要再记类似内容？") : true;
+    if (!confirmed) return;
+    setMemoryPending(true);
+    const result = await window.clinePet?.blockMemory?.(id);
+    setMemoryPending(false);
+    if (!result) {
+      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      return;
+    }
+    if (result.ok) {
+      setMemoryOverview((current) => current ? { ...current, memories: current.memories.filter((memory) => memory.id !== id) } : current);
+      pushReplacingNotice("好，我以后不会再记类似内容。");
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
@@ -348,7 +396,17 @@ export function App() {
         onChatCancel={() => setChatOpen(false)}
       />
       <ChatHistoryPanel open={historyOpen} pending={historyPending} turns={chatHistory} onClose={() => setHistoryOpen(false)} onClear={clearChatHistoryFromPanel} />
-      <MemoryPanel open={memoryOpen} pending={memoryPending} overview={memoryOverview} onClose={() => setMemoryOpen(false)} onDelete={deleteMemoryFromPanel} onClear={clearMemoriesFromPanel} onExport={exportMemoriesFromPanel} />
+      <MemoryPanel
+        open={memoryOpen}
+        pending={memoryPending}
+        overview={memoryOverview}
+        onClose={() => setMemoryOpen(false)}
+        onDelete={deleteMemoryFromPanel}
+        onClear={clearMemoriesFromPanel}
+        onExport={exportMemoriesFromPanel}
+        onUpdate={updateMemoryFromPanel}
+        onBlock={blockMemoryFromPanel}
+      />
       <DeepSeekSettingsPanel open={settingsOpen} pending={settingsPending} settings={deepSeekSettings} onSave={saveDeepSeekSettings} onCancel={() => setSettingsOpen(false)} />
     </>
   );
