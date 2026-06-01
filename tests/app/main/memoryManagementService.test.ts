@@ -4,12 +4,15 @@ import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { getPaths } from "../../../src/shared/paths";
 import { readContextMemories } from "../../../src/app/main/memory/contextStore";
+import { readMemoryBlockRules, writeMemoryBlockRules } from "../../../src/app/main/memory/memoryBlocklistStore";
 import {
+  blockContextMemoryForUser,
   clearContextMemoriesForUser,
   deleteContextMemoryForUser,
   deriveRelationshipOverview,
   exportContextMemoriesForUser,
-  getMemoryOverview
+  getMemoryOverview,
+  updateContextMemoryForUser
 } from "../../../src/app/main/memory/memoryManagementService";
 import type { ContextMemoryItem, RelationshipMemory } from "../../../src/app/main/memory/memoryTypes";
 
@@ -136,5 +139,114 @@ describe("memoryManagementService", () => {
     expect(parsed.exportedAt).toBe("2026-06-01T05:00:00.000Z");
     expect(parsed.count).toBe(1);
     expect(parsed.memories[0].text).toBe("项目在做桌宠");
+  });
+
+  it("edits memory text and updatedAt without changing identity or metadata", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemories(root, [memory({
+      id: "m1",
+      kind: "preference",
+      text: "用户喜欢很吵的提醒",
+      tags: ["chat", "preference"],
+      weight: 80,
+      createdAt: "2026-06-01T01:00:00.000Z",
+      updatedAt: "2026-06-01T01:00:00.000Z"
+    })]);
+
+    const result = updateContextMemoryForUser(root, {
+      id: "m1",
+      text: "用户喜欢安静温柔的提醒",
+      now: "2026-06-01T06:00:00.000Z"
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data).toMatchObject({
+      id: "m1",
+      kind: "preference",
+      text: "用户喜欢安静温柔的提醒",
+      tags: ["chat", "preference"],
+      weight: 80,
+      createdAt: "2026-06-01T01:00:00.000Z",
+      updatedAt: "2026-06-01T06:00:00.000Z"
+    });
+    expect(readContextMemories(root)[0].text).toBe("用户喜欢安静温柔的提醒");
+  });
+
+  it("rejects invalid edit input", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemories(root, [memory({ id: "m1", kind: "fact", text: "存在" })]);
+
+    expect(updateContextMemoryForUser(root, { id: " ", text: "新内容" })).toEqual({ ok: false, errorCode: "INVALID_MEMORY_ID", message: "记忆 id 无效。" });
+    expect(updateContextMemoryForUser(root, { id: "m1", text: "   " })).toEqual({ ok: false, errorCode: "INVALID_MEMORY_TEXT", message: "记忆内容不能为空。" });
+    expect(updateContextMemoryForUser(root, { id: "missing", text: "新内容" })).toEqual({ ok: false, errorCode: "MEMORY_NOT_FOUND", message: "这条记忆已经不存在了。" });
+  });
+
+  it("blocks one memory by removing it and writing a local block rule", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemories(root, [
+      memory({ id: "keep", kind: "fact", text: "保留" }),
+      memory({ id: "block-me", kind: "preference", text: "用户喜欢夜里喝咖啡" })
+    ]);
+
+    const result = blockContextMemoryForUser(root, { id: "block-me", now: "2026-06-01T06:00:00.000Z" });
+
+    expect(result).toEqual({ ok: true, data: { blockedCount: 1 } });
+    expect(readContextMemories(root).map((item) => item.id)).toEqual(["keep"]);
+    expect(readMemoryBlockRules(root)).toEqual([expect.objectContaining({
+      text: "用户喜欢夜里喝咖啡",
+      kind: "preference",
+      sourceMemoryId: "block-me",
+      createdAt: "2026-06-01T06:00:00.000Z"
+    })]);
+  });
+
+  it("keeps delete and clear separate from block rules", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemories(root, [
+      memory({ id: "delete-me", kind: "fact", text: "只删除" }),
+      memory({ id: "clear-me", kind: "preference", text: "会被清空" })
+    ]);
+    writeMemoryBlockRules(root, [{
+      id: "rule-1",
+      text: "不要记住旧偏好",
+      normalizedText: "不要记住旧偏好",
+      kind: "preference",
+      sourceMemoryId: "old",
+      createdAt: "2026-06-01T02:00:00.000Z"
+    }]);
+
+    expect(deleteContextMemoryForUser(root, "delete-me")).toEqual({ ok: true });
+    expect(readMemoryBlockRules(root)).toHaveLength(1);
+
+    expect(clearContextMemoriesForUser(root)).toEqual({ ok: true });
+    expect(readContextMemories(root)).toEqual([]);
+    expect(readMemoryBlockRules(root)).toHaveLength(1);
+  });
+
+  it("exports formatted memory JSON with block rule metadata", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemories(root, [memory({ id: "m1", kind: "project-context", text: "项目在做桌宠" })]);
+    writeMemoryBlockRules(root, [{
+      id: "rule-1",
+      text: "不要记住咖啡",
+      normalizedText: "不要记住咖啡",
+      kind: "preference",
+      sourceMemoryId: "m-old",
+      createdAt: "2026-06-01T02:00:00.000Z"
+    }]);
+
+    const result = exportContextMemoriesForUser(root, "2026-06-01T07:00:00.000Z");
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const parsed = JSON.parse(result.data) as { blockedCount: number; blockedMemories: unknown[] };
+    expect(parsed.blockedCount).toBe(1);
+    expect(parsed.blockedMemories).toEqual([expect.objectContaining({ text: "不要记住咖啡", sourceMemoryId: "m-old" })]);
   });
 });

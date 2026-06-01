@@ -1,4 +1,5 @@
 import { readContextMemories, writeContextMemories } from "./contextStore.js";
+import { appendMemoryBlockRule, readMemoryBlockRules } from "./memoryBlocklistStore.js";
 import { loadRelationshipMemory } from "./relationshipStore.js";
 import type { ContextMemoryItem, RelationshipMemory } from "./memoryTypes.js";
 
@@ -24,6 +25,14 @@ export type MemoryOverview = {
 
 export type MemoryMutationResponse =
   | { ok: true }
+  | { ok: false; errorCode: "INVALID_MEMORY_ID" | "MEMORY_NOT_FOUND"; message: string };
+
+export type UpdateMemoryResponse =
+  | { ok: true; data: RendererContextMemory }
+  | { ok: false; errorCode: "INVALID_MEMORY_ID" | "INVALID_MEMORY_TEXT" | "MEMORY_NOT_FOUND"; message: string };
+
+export type BlockMemoryResponse =
+  | { ok: true; data: { blockedCount: number } }
   | { ok: false; errorCode: "INVALID_MEMORY_ID" | "MEMORY_NOT_FOUND"; message: string };
 
 export type ExportMemoriesServiceResponse =
@@ -70,6 +79,14 @@ function byUpdatedAtDesc(left: RendererContextMemory, right: RendererContextMemo
   return (right.updatedAt || "").localeCompare(left.updatedAt || "");
 }
 
+function invalidId(): Extract<MemoryMutationResponse, { ok: false }> {
+  return { ok: false, errorCode: "INVALID_MEMORY_ID", message: "记忆 id 无效。" };
+}
+
+function notFound(): Extract<MemoryMutationResponse, { ok: false }> {
+  return { ok: false, errorCode: "MEMORY_NOT_FOUND", message: "这条记忆已经不存在了。" };
+}
+
 export function getMemoryOverview(root: string): MemoryOverview {
   return {
     relationship: deriveRelationshipOverview(loadRelationshipMemory(root)),
@@ -79,14 +96,48 @@ export function getMemoryOverview(root: string): MemoryOverview {
 
 export function deleteContextMemoryForUser(root: string, id: string): MemoryMutationResponse {
   const normalizedId = id.trim();
-  if (!normalizedId) return { ok: false, errorCode: "INVALID_MEMORY_ID", message: "记忆 id 无效。" };
+  if (!normalizedId) return invalidId();
 
   const memories = readContextMemories(root);
   const next = memories.filter((item) => item.id !== normalizedId);
-  if (next.length === memories.length) return { ok: false, errorCode: "MEMORY_NOT_FOUND", message: "这条记忆已经不存在了。" };
+  if (next.length === memories.length) return notFound();
 
   writeContextMemories(root, next);
   return { ok: true };
+}
+
+export function updateContextMemoryForUser(root: string, input: { id: string; text: string; now?: string }): UpdateMemoryResponse {
+  const normalizedId = input.id.trim();
+  if (!normalizedId) return invalidId();
+  const text = input.text.trim();
+  if (!text) return { ok: false, errorCode: "INVALID_MEMORY_TEXT", message: "记忆内容不能为空。" };
+
+  const memories = readContextMemories(root);
+  const matchIndex = memories.findIndex((item) => item.id === normalizedId);
+  if (matchIndex === -1) return notFound();
+
+  const updated = { ...memories[matchIndex], text, updatedAt: input.now ?? new Date().toISOString() };
+  const next = memories.map((item, index) => index === matchIndex ? updated : item);
+  writeContextMemories(root, next);
+  return { ok: true, data: toRendererMemory(updated) };
+}
+
+export function blockContextMemoryForUser(root: string, input: { id: string; now?: string }): BlockMemoryResponse {
+  const normalizedId = input.id.trim();
+  if (!normalizedId) return invalidId();
+
+  const memories = readContextMemories(root);
+  const target = memories.find((item) => item.id === normalizedId);
+  if (!target) return notFound();
+
+  appendMemoryBlockRule(root, {
+    text: target.text,
+    kind: target.kind,
+    sourceMemoryId: target.id,
+    now: input.now
+  });
+  writeContextMemories(root, memories.filter((item) => item.id !== normalizedId));
+  return { ok: true, data: { blockedCount: readMemoryBlockRules(root).length } };
 }
 
 export function clearContextMemoriesForUser(root: string): MemoryMutationResponse {
@@ -96,8 +147,9 @@ export function clearContextMemoriesForUser(root: string): MemoryMutationRespons
 
 export function exportContextMemoriesForUser(root: string, now = new Date().toISOString()): ExportMemoriesServiceResponse {
   const memories = readContextMemories(root).map(toRendererMemory).sort(byUpdatedAtDesc);
+  const blockedMemories = readMemoryBlockRules(root);
   return {
     ok: true,
-    data: JSON.stringify({ exportedAt: now, count: memories.length, memories }, null, 2)
+    data: JSON.stringify({ exportedAt: now, count: memories.length, blockedCount: blockedMemories.length, memories, blockedMemories }, null, 2)
   };
 }
