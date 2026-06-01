@@ -100,6 +100,47 @@ describe("renderer App", () => {
     expect(document.querySelector(".bubble-panel")).toBeNull();
   });
 
+  it("auto-hides chat bubbles after about five seconds", async () => {
+    vi.useFakeTimers();
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      sendChatMessage: vi.fn().mockResolvedValue({ ok: true, text: "我在这里陪着你。" })
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    const stage = document.querySelector(".pet-stage") as HTMLElement;
+    await act(async () => {
+      stage.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    });
+
+    const input = document.querySelector('input[name="message"]') as HTMLInputElement;
+    const form = document.querySelector(".chat-input") as HTMLFormElement;
+    await act(async () => {
+      input.value = "陪我一下";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+
+    expect(document.querySelector(".speech-bubble")?.textContent).toContain("我在这里陪着你。");
+
+    await act(async () => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(document.querySelector(".speech-bubble")).toBeNull();
+  });
+
   it("applies motion class for visible status", async () => {
     let statusHandler: ((payload: any) => void) | null = null;
     (window as any).clinePet = {

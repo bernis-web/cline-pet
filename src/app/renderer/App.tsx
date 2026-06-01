@@ -155,6 +155,15 @@ export function App() {
     window.clinePet?.getPetPack?.().then((payload) => applyPack(payload)).catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    if (!bubble?.autoHideMs) return;
+    const bubbleId = bubble.id;
+    const timer = window.setTimeout(() => {
+      setBubble((current) => current?.id === bubbleId ? null : current);
+    }, bubble.autoHideMs);
+    return () => window.clearTimeout(timer);
+  }, [bubble]);
+
   const displayStatus = temporaryStatus ?? visibleStatus;
   const displayImageSrc = temporaryImageSrc ?? images[displayStatus] ?? defaultImages.idle;
 

@@ -43,12 +43,12 @@ body,
 
 .speech-bubble {
   position: absolute;
-  top: 12px;
+  bottom: 238px;
   left: 50%;
   box-sizing: border-box;
   width: calc(100% - 36px);
   max-width: 320px;
-  max-height: 160px;
+  max-height: 132px;
   overflow-y: auto;
   transform: translateX(-50%);
   padding: 10px 14px;

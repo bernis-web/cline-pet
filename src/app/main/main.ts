@@ -10,6 +10,7 @@ import { writeLog } from "../../shared/logger.js";
 import type { UpdatePetStatusInput } from "../../shared/schemas.js";
 import { PET_STATUSES, type PetStatus } from "../../shared/statuses.js";
 import { createPetWindow } from "./createPetWindow.js";
+import { createChatMoodStatus } from "./chatMood.js";
 import { createChatReply } from "./chatService.js";
 import { getDeepSeekSettings, loadDeepSeekConfig, saveDeepSeekSettings, type DeepSeekSettingsInput } from "./config.js";
 import { recordHeadPatInteraction, type HeadPatInteractionInput } from "./interaction/headPatService.js";
@@ -160,6 +161,11 @@ app.whenReady().then(async () => {
 
     const result = await createChatReply({ text: payload.text ?? "", config: config.data });
     if (!result.ok) return { ok: false, errorCode: result.errorCode, message: result.message };
+    notifyRenderer(win, createChatMoodStatus({
+      now: new Date().toISOString(),
+      relationship: loadRelationshipMemory(appDataBaseDir),
+      latestVisibleStatus: latestStatus.visibleStatus
+    }));
     return { ok: true, text: result.data.text };
   });
   await win.loadURL(rendererUrl);

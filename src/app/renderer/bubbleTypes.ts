@@ -52,7 +52,7 @@ export function bubbleFromChat(text: string, createdAt = new Date().toISOString(
     kind: "chat",
     text,
     createdAt,
-    autoHideMs: 9000
+    autoHideMs: 5000
   };
 }
 

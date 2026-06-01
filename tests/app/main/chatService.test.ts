@@ -13,6 +13,10 @@ describe("chat service", () => {
           role: "system",
           content: expect.stringContaining("卡卡")
         });
+        expect(messages[0].content).toContain("更关心用户");
+        expect(messages[0].content).toContain("可爱");
+        expect(messages[0].content).toContain("简短");
+        expect(messages[0].content).toContain("隐私");
         expect(messages[1]).toEqual({ role: "user", content: "你是谁？" });
         return { ok: true, data: { text: "我是卡卡。" } };
       }

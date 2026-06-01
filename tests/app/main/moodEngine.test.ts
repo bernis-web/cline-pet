@@ -71,6 +71,26 @@ describe("mood engine", () => {
     expect(mood).toEqual({ name: "calm", suggestedStatus: "idle" });
   });
 
+  it("shows a warm happy mood after a friendly chat even before the relationship is high", () => {
+    const mood = deriveMoodState({
+      now: "2026-05-31T15:00:00.000Z",
+      relationship: {
+        familiarity: 5,
+        affection: 18,
+        engagement: 12,
+        trust: 10,
+        recentEvents: [],
+        updatedAt: "2026-05-31T14:59:00.000Z"
+      },
+      hasRecentChat: true,
+      lastChatSentiment: "positive",
+      memoryHitCount: 0,
+      clineVisibleStatus: "idle"
+    });
+
+    expect(mood).toEqual({ name: "happy", suggestedStatus: "happy" });
+  });
+
   it("ignores expired warmth", () => {
     const mood = deriveMoodState({
       now: "2026-05-30T05:00:00.000Z",

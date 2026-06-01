@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 const styles = readFileSync(join(process.cwd(), "src/app/renderer/petStyles.css"), "utf8");
 
 describe("pet renderer styles", () => {
-  it("gives the speech bubble enough bounded space instead of clipping at the window top", () => {
+  it("places the speech bubble near Kaka's head instead of pinning it to the window top", () => {
     expect(styles).toContain(".speech-bubble");
-    expect(styles).toContain("top: 12px");
-    expect(styles).toContain("max-height: 160px");
+    expect(styles).not.toContain("top: 12px");
+    expect(styles).toContain("bottom: 238px");
+    expect(styles).toContain("max-height: 132px");
     expect(styles).toContain("box-sizing: border-box");
   });
 

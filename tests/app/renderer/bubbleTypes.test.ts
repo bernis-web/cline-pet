@@ -56,7 +56,7 @@ describe("bubble message strategy", () => {
       kind: "chat",
       text: "你好，我是卡卡。",
       createdAt: now,
-      autoHideMs: 9000
+      autoHideMs: 5000
     });
   });
 });

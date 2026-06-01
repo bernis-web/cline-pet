@@ -39,7 +39,7 @@ export function deriveMoodState(input: {
     return { name: "upset", suggestedStatus: "angry" };
   }
 
-  if (input.lastChatSentiment === "positive" && input.relationship.affection >= 70) {
+  if (input.lastChatSentiment === "positive" && input.hasRecentChat) {
     return { name: "happy", suggestedStatus: "happy" };
   }
 
