@@ -65,6 +65,22 @@ export function appendMemoryBlockRule(root: string, input: MemoryBlockRuleInput)
   return nextRule;
 }
 
+export function deleteMemoryBlockRule(root: string, id: string): boolean {
+  const normalizedId = id.trim();
+  if (!normalizedId) return false;
+
+  const rules = readMemoryBlockRules(root);
+  const next = rules.filter((rule) => rule.id !== normalizedId);
+  if (next.length === rules.length) return false;
+
+  writeMemoryBlockRules(root, next);
+  return true;
+}
+
+export function clearMemoryBlockRules(root: string) {
+  writeMemoryBlockRules(root, []);
+}
+
 export function isContextMemoryBlocked(candidate: ContextMemoryItem, rules: MemoryBlockRule[]): boolean {
   const normalized = normalizeMemoryText(candidate.text);
   return rules.some((rule) => {

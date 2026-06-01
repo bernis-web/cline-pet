@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   appendMemoryBlockRule,
+  clearMemoryBlockRules,
+  deleteMemoryBlockRule,
   filterBlockedContextMemoryCandidates,
   readMemoryBlockRules,
   writeMemoryBlockRules
@@ -111,5 +113,63 @@ describe("memoryBlocklistStore", () => {
 
     expect(filterBlockedContextMemoryCandidates([sameKind], rules)).toEqual([]);
     expect(filterBlockedContextMemoryCandidates([differentKind], rules).map((item) => item.id)).toEqual(["different-kind"]);
+  });
+
+  it("deletes one block rule by id without touching other rules", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemoryBlockRules(root, [
+      {
+        id: "rule-keep",
+        text: "保留规则",
+        normalizedText: "保留规则",
+        kind: "fact",
+        createdAt: "2026-06-01T01:00:00.000Z"
+      },
+      {
+        id: "rule-delete",
+        text: "删除规则",
+        normalizedText: "删除规则",
+        kind: "preference",
+        sourceMemoryId: "memory-old",
+        createdAt: "2026-06-01T02:00:00.000Z"
+      }
+    ]);
+
+    expect(deleteMemoryBlockRule(root, "rule-delete")).toBe(true);
+
+    expect(readMemoryBlockRules(root).map((rule) => rule.id)).toEqual(["rule-keep"]);
+  });
+
+  it("returns false when deleting an invalid or missing block rule id", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemoryBlockRules(root, [{
+      id: "rule-known",
+      text: "存在的规则",
+      normalizedText: "存在的规则",
+      kind: "preference",
+      createdAt: "2026-06-01T01:00:00.000Z"
+    }]);
+
+    expect(deleteMemoryBlockRule(root, "  ")).toBe(false);
+    expect(deleteMemoryBlockRule(root, "missing")).toBe(false);
+    expect(readMemoryBlockRules(root).map((rule) => rule.id)).toEqual(["rule-known"]);
+  });
+
+  it("clears all memory block rules", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemoryBlockRules(root, [{
+      id: "rule-1",
+      text: "不要记咖啡",
+      normalizedText: "不要记咖啡",
+      kind: "preference",
+      createdAt: "2026-06-01T01:00:00.000Z"
+    }]);
+
+    clearMemoryBlockRules(root);
+
+    expect(readMemoryBlockRules(root)).toEqual([]);
   });
 });
