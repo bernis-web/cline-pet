@@ -18,4 +18,17 @@ describe("renderer pet bridge", () => {
       durationMs: 1000
     });
   });
+
+  it("loads and clears chat history through IPC", async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce({ ok: true, data: [] })
+      .mockResolvedValueOnce({ ok: true });
+    const bridge = createRendererPetBridge({ on: vi.fn(), invoke } as any);
+
+    await bridge.getChatHistory();
+    await bridge.clearChatHistory();
+
+    expect(invoke).toHaveBeenNthCalledWith(1, "chat:get-history");
+    expect(invoke).toHaveBeenNthCalledWith(2, "chat:clear-history");
+  });
 });

@@ -12,6 +12,24 @@ export type ChatResponse =
   | { ok: true; text: string }
   | { ok: false; errorCode: string; message: string };
 
+export type RendererChatHistoryTurn = {
+  id: string;
+  userText: string;
+  assistantText: string;
+  createdAt: string;
+  sentiment: string;
+  summary?: string;
+  memoryIds: string[];
+};
+
+export type ChatHistoryResponse =
+  | { ok: true; data: RendererChatHistoryTurn[] }
+  | { ok: false; errorCode: string; message: string };
+
+export type ClearChatHistoryResponse =
+  | { ok: true }
+  | { ok: false; errorCode: string; message: string };
+
 export type HeadPatInteractionInput = {
   startedAt: string;
   endedAt: string;
@@ -46,6 +64,8 @@ export type IpcLike = {
   on(channel: "chat:response", callback: (event: unknown, payload: ChatResponse) => void): void;
   invoke(channel: "get-pet-pack"): Promise<RendererPetPack>;
   invoke(channel: "chat:send", payload: { text: string }): Promise<ChatResponse>;
+  invoke(channel: "chat:get-history"): Promise<ChatHistoryResponse>;
+  invoke(channel: "chat:clear-history"): Promise<ClearChatHistoryResponse>;
   invoke(channel: "deepseek:get-settings"): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "deepseek:save-settings", payload: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "window:move-by", payload: { dx: number; dy: number }): Promise<{ ok: boolean; message?: string }>;
@@ -65,6 +85,12 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     sendChatMessage(text: string) {
       return ipc.invoke("chat:send", { text });
+    },
+    getChatHistory() {
+      return ipc.invoke("chat:get-history");
+    },
+    clearChatHistory() {
+      return ipc.invoke("chat:clear-history");
     },
     getDeepSeekSettings() {
       return ipc.invoke("deepseek:get-settings");
