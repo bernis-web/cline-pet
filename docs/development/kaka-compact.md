@@ -13,11 +13,12 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 
 ## Latest important commit
 
-- `3b917a6 feat: tune kaka chat bubbles and mood`
-  - Chat bubbles auto-hide around 5 seconds.
-  - Bubble moved near Kaka's head.
-  - Successful chat pushes a happy mood status.
-  - Kaka prompt is warmer, cuter, concise, privacy-safe.
+- `85b43a3 feat: add Kaka chat history panel`
+- `99847f8 feat: add readable Kaka chat bubbles`
+- `cd23b18 feat: coordinate Kaka chat memory loop`
+- `93df7cd feat: grow relationship from chat memory`
+- `94dcc7c feat: add DeepSeek memory extraction`
+- `e774a8b feat: add local chat history store`
 
 ## What is already built
 
@@ -28,8 +29,9 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Kaka local PNG installer: `scripts/install-kaka-pet-pack.ps1` copies assets to `%APPDATA%/cline-desktop-pet/pets/kaka-desktop-pet/`.
 - DeepSeek chat settings via right-click; config stored locally in `%APPDATA%/cline-desktop-pet/config.json`.
 - Local memory files: `profile.json`, `relationship.json`, `context-memory.jsonl`.
+- Local chat history file: `chat-history.jsonl`.
 - Mood/pose/presence/head-pat modules exist.
-- Renderer supports bubbles, auto-hide, drag, double-click chat, right-click settings, long-press head-pat.
+- Renderer supports bubbles, auto-hide, readable long chat bubbles, chat history panel, drag, double-click chat, right-click settings, long-press head-pat.
 
 ## Main files to know
 
@@ -109,8 +111,8 @@ If these work but Cline tool calls do not, rerun integration and reload VS Code/
 
 ## Likely next tasks
 
-1. Merge feature branch to `main` after user approves.
-2. Improve MCP connection UX: clearer README troubleshooting and maybe a tray diagnostic action showing MCP settings path.
-3. Add richer mood transitions after chat sentiment detection instead of treating all successful chats as positive.
-4. Add bubble queue so status/chat/presence messages do not overwrite each other.
-5. Add more `variants` for Kaka pack if new local assets are available.
+1. Finish Cyber Life v1 verification: full `npm test`, `npm run build`, push current feature commits.
+2. Merge feature branch to `main` after user approves.
+3. Extend presence scheduling with recent-reading/long-work inputs from the renderer and main loop.
+4. Improve MCP connection UX: clearer README troubleshooting and maybe a tray diagnostic action showing MCP settings path.
+5. Add richer mood transitions after chat sentiment detection instead of treating all successful chats as positive.

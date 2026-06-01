@@ -7,17 +7,36 @@ export function maybeCreatePresencePulse(input: {
   lastPresenceAt?: string;
   latestVisibleStatus: PetStatus;
   mood: MoodName;
+  userIsReading?: boolean;
+  longWorkSession?: boolean;
 }): UpdatePetStatusInput | null {
   const nowMs = new Date(input.now).getTime();
   const lastPresenceMs = input.lastPresenceAt ? new Date(input.lastPresenceAt).getTime() : 0;
   const cooldownMs = 4 * 60 * 60 * 1000;
 
-  if (input.latestVisibleStatus === "loading" || input.latestVisibleStatus === "thinking") {
+  if (input.userIsReading) {
+    return null;
+  }
+
+  if ((input.latestVisibleStatus === "loading" || input.latestVisibleStatus === "thinking") && !input.longWorkSession) {
     return null;
   }
 
   if (lastPresenceMs && nowMs - lastPresenceMs < cooldownMs) {
     return null;
+  }
+
+  if (input.longWorkSession) {
+    return {
+      status: "message",
+      visibleStatus: "message",
+      baseStatus: "message",
+      overlayStatus: null,
+      task: "",
+      message: "要不要喝口水？我会乖乖等你。",
+      source: "presence",
+      updatedAt: input.now
+    };
   }
 
   if (input.mood === "lonely") {

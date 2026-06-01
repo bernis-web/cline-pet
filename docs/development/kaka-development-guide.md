@@ -124,6 +124,24 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - DeepSeek prompt 在 `src/app/main/chatService.ts`，要求卡卡“更关心用户”、可爱但不过分卖萌、简短、尊重隐私边界。
 - 聊天成功后，`src/app/main/main.ts` 调用 `createChatMoodStatus()`，再 `notifyRenderer()`，让卡卡切到更明显的 mood-driven 姿态（友好聊天当前为 `happy`）。
 
+## Cyber Life v1
+
+- 设计文档：`docs/superpowers/specs/2026-06-01-kaka-cyber-life-v1-design.md`。
+- 实现计划：`docs/superpowers/plans/2026-06-01-kaka-cyber-life-v1-implementation.md`。
+- 新增本地历史文件：`%APPDATA%/cline-desktop-pet/chat-history.jsonl`。
+- 渲染层现在支持：
+  - 长回复聊天气泡的阅读模式。
+  - 聊天气泡优先于“卡卡正在想...”提示气泡。
+  - 对话历史入口和历史覆盖面板。
+  - 气泡队列，减少 status/chat/presence 互相覆盖。
+- 主进程现在支持：
+  - `chatCoordinator` 统一串联记忆检索、聊天回复、历史写入、关系成长和心情更新。
+  - `memoryExtractionService` 用 DeepSeek 对聊天做结构化记忆提炼，并写入 `context-memory.jsonl`。
+  - `relationshipEvents` 让聊天也能缓慢增长 familiarity/affection/engagement/trust。
+  - `presenceService` 避免在用户阅读聊天气泡时插入主动陪伴，并允许低频长工时提醒喝水。
+- DeepSeek 记忆提炼只发送聊天文本和紧凑记忆摘要，不自动读取文件、代码、屏幕、终端输出或日志。
+- Cyber Life v1 范围：可阅读长回复、历史面板、记忆闭环、关系成长、低频主动陪伴、气泡队列。
+
 ## 资源包
 
 资源包根目录：
@@ -154,6 +172,7 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - `profile.json`：用户档案记忆。
 - `relationship.json`：关系/短期 warmth 记忆。
 - `context-memory.jsonl`：上下文记忆。
+- `chat-history.jsonl`：最近原始聊天轮次。
 - `logs/`：App/MCP 日志。
 
 隐私约束：MCP payload 只传状态、短任务摘要、短提示和更新时间；DeepSeek 请求只传当前消息、少量上下文/记忆摘要，不传完整代码、文件内容或终端长输出。

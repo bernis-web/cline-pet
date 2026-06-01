@@ -23,4 +23,28 @@ describe("presence service", () => {
 
     expect(pulse).toEqual(expect.objectContaining({ status: "message", message: expect.stringContaining("陪") }));
   });
+
+  it("stays quiet while the user is reading a chat bubble", () => {
+    const pulse = maybeCreatePresencePulse({
+      now: "2026-06-01T21:00:00.000Z",
+      lastPresenceAt: "2026-06-01T10:00:00.000Z",
+      latestVisibleStatus: "idle",
+      mood: "lonely",
+      userIsReading: true
+    });
+
+    expect(pulse).toBeNull();
+  });
+
+  it("can emit a rare work-session care reminder after cooldown", () => {
+    const pulse = maybeCreatePresencePulse({
+      now: "2026-06-01T21:00:00.000Z",
+      lastPresenceAt: "2026-06-01T10:00:00.000Z",
+      latestVisibleStatus: "loading",
+      mood: "curious",
+      longWorkSession: true
+    });
+
+    expect(pulse?.message).toContain("喝口水");
+  });
 });
