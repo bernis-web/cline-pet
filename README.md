@@ -90,6 +90,13 @@ npm test
 npm run build
 ```
 
+## 后续开发入口
+
+- 开发指南：docs/development/kaka-development-guide.md
+- 交接 compact：docs/development/kaka-compact.md
+
+后续继续开发时，优先阅读 compact；需要查具体模块职责、MCP/Bridge 排查、资源包格式、测试策略时，再看开发指南。
+
 ## 模拟状态变化
 
 先启动桌宠：
