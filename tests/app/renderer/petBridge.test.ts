@@ -40,4 +40,23 @@ describe("renderer pet bridge", () => {
 
     expect(invoke).toHaveBeenCalledWith("presence:set-activity", { userIsReading: true });
   });
+
+  it("manages long-term memory through IPC", async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce({ ok: true, data: { relationship: null, memories: [] } })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true, data: "{}" });
+    const bridge = createRendererPetBridge({ on: vi.fn(), invoke } as any);
+
+    await bridge.getMemoryOverview();
+    await bridge.deleteMemory("memory-1");
+    await bridge.clearMemories();
+    await bridge.exportMemories();
+
+    expect(invoke).toHaveBeenNthCalledWith(1, "memory:get-overview");
+    expect(invoke).toHaveBeenNthCalledWith(2, "memory:delete", { id: "memory-1" });
+    expect(invoke).toHaveBeenNthCalledWith(3, "memory:clear");
+    expect(invoke).toHaveBeenNthCalledWith(4, "memory:export");
+  });
 });

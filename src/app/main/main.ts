@@ -16,6 +16,7 @@ import { createChatReply } from "./chatService.js";
 import { getDeepSeekSettings, loadDeepSeekConfig, saveDeepSeekSettings, type DeepSeekSettingsInput } from "./config.js";
 import { recordHeadPatInteraction, type HeadPatInteractionInput } from "./interaction/headPatService.js";
 import { clearChatHistory, readChatHistory } from "./memory/chatHistoryStore.js";
+import { clearContextMemoriesForUser, deleteContextMemoryForUser, exportContextMemoriesForUser, getMemoryOverview } from "./memory/memoryManagementService.js";
 import { loadRelationshipMemory } from "./memory/relationshipStore.js";
 import { deriveMoodState } from "./moodEngine.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
@@ -188,6 +189,10 @@ app.whenReady().then(async () => {
     clearChatHistory(appDataBaseDir);
     return { ok: true };
   });
+  ipcMain.handle("memory:get-overview", () => ({ ok: true, data: getMemoryOverview(appDataBaseDir) }));
+  ipcMain.handle("memory:delete", (_event, payload: { id?: string }) => deleteContextMemoryForUser(appDataBaseDir, payload?.id ?? ""));
+  ipcMain.handle("memory:clear", () => clearContextMemoriesForUser(appDataBaseDir));
+  ipcMain.handle("memory:export", () => exportContextMemoriesForUser(appDataBaseDir));
   await win.loadURL(rendererUrl);
   sendSelectedPack();
   showPetWindow(win);

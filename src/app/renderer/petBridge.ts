@@ -30,6 +30,48 @@ export type ClearChatHistoryResponse =
   | { ok: true }
   | { ok: false; errorCode: string; message: string };
 
+export type RelationshipStage = "new" | "familiar" | "close" | "trusted";
+
+export type RendererRelationshipOverview = {
+  stage: RelationshipStage;
+  stageLabel: string;
+  stageDescription: string;
+  familiarity: number;
+  affection: number;
+  engagement: number;
+  trust: number;
+  updatedAt: string;
+};
+
+export type RendererContextMemory = {
+  id: string;
+  kind: "conversation-summary" | "fact" | "preference" | "project-context";
+  text: string;
+  tags: string[];
+  weight: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MemoryOverview = {
+  relationship: RendererRelationshipOverview;
+  memories: RendererContextMemory[];
+};
+
+export type MemoryOverviewResponse =
+  | { ok: true; data: MemoryOverview }
+  | { ok: false; errorCode: string; message: string };
+
+export type DeleteMemoryResponse =
+  | { ok: true }
+  | { ok: false; errorCode: string; message: string };
+
+export type ClearMemoriesResponse = DeleteMemoryResponse;
+
+export type ExportMemoriesResponse =
+  | { ok: true; data: string }
+  | { ok: false; errorCode: string; message: string };
+
 export type PresenceActivityInput = {
   userIsReading?: boolean;
 };
@@ -74,6 +116,10 @@ export type IpcLike = {
   invoke(channel: "chat:send", payload: { text: string }): Promise<ChatResponse>;
   invoke(channel: "chat:get-history"): Promise<ChatHistoryResponse>;
   invoke(channel: "chat:clear-history"): Promise<ClearChatHistoryResponse>;
+  invoke(channel: "memory:get-overview"): Promise<MemoryOverviewResponse>;
+  invoke(channel: "memory:delete", payload: { id: string }): Promise<DeleteMemoryResponse>;
+  invoke(channel: "memory:clear"): Promise<ClearMemoriesResponse>;
+  invoke(channel: "memory:export"): Promise<ExportMemoriesResponse>;
   invoke(channel: "presence:set-activity", payload: PresenceActivityInput): Promise<PresenceActivityResponse>;
   invoke(channel: "deepseek:get-settings"): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "deepseek:save-settings", payload: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -100,6 +146,18 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     clearChatHistory() {
       return ipc.invoke("chat:clear-history");
+    },
+    getMemoryOverview() {
+      return ipc.invoke("memory:get-overview");
+    },
+    deleteMemory(id: string) {
+      return ipc.invoke("memory:delete", { id });
+    },
+    clearMemories() {
+      return ipc.invoke("memory:clear");
+    },
+    exportMemories() {
+      return ipc.invoke("memory:export");
     },
     setPresenceActivity(input: PresenceActivityInput) {
       return ipc.invoke("presence:set-activity", input);
