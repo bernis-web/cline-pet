@@ -46,17 +46,23 @@ describe("renderer pet bridge", () => {
       .mockResolvedValueOnce({ ok: true, data: { relationship: null, memories: [] } })
       .mockResolvedValueOnce({ ok: true })
       .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true, data: "{}" });
+      .mockResolvedValueOnce({ ok: true, data: "{}" })
+      .mockResolvedValueOnce({ ok: true, data: { id: "memory-1", text: "修正后的记忆" } })
+      .mockResolvedValueOnce({ ok: true, data: { blockedCount: 1 } });
     const bridge = createRendererPetBridge({ on: vi.fn(), invoke } as any);
 
     await bridge.getMemoryOverview();
     await bridge.deleteMemory("memory-1");
     await bridge.clearMemories();
     await bridge.exportMemories();
+    await bridge.updateMemory("memory-1", "修正后的记忆");
+    await bridge.blockMemory("memory-1");
 
     expect(invoke).toHaveBeenNthCalledWith(1, "memory:get-overview");
     expect(invoke).toHaveBeenNthCalledWith(2, "memory:delete", { id: "memory-1" });
     expect(invoke).toHaveBeenNthCalledWith(3, "memory:clear");
     expect(invoke).toHaveBeenNthCalledWith(4, "memory:export");
+    expect(invoke).toHaveBeenNthCalledWith(5, "memory:update", { id: "memory-1", text: "修正后的记忆" });
+    expect(invoke).toHaveBeenNthCalledWith(6, "memory:block", { id: "memory-1" });
   });
 });

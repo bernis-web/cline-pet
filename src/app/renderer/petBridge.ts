@@ -66,6 +66,14 @@ export type DeleteMemoryResponse =
   | { ok: true }
   | { ok: false; errorCode: string; message: string };
 
+export type UpdateMemoryResponse =
+  | { ok: true; data: RendererContextMemory }
+  | { ok: false; errorCode: string; message: string };
+
+export type BlockMemoryResponse =
+  | { ok: true; data: { blockedCount: number } }
+  | { ok: false; errorCode: string; message: string };
+
 export type ClearMemoriesResponse = DeleteMemoryResponse;
 
 export type ExportMemoriesResponse =
@@ -120,6 +128,8 @@ export type IpcLike = {
   invoke(channel: "memory:delete", payload: { id: string }): Promise<DeleteMemoryResponse>;
   invoke(channel: "memory:clear"): Promise<ClearMemoriesResponse>;
   invoke(channel: "memory:export"): Promise<ExportMemoriesResponse>;
+  invoke(channel: "memory:update", payload: { id: string; text: string }): Promise<UpdateMemoryResponse>;
+  invoke(channel: "memory:block", payload: { id: string }): Promise<BlockMemoryResponse>;
   invoke(channel: "presence:set-activity", payload: PresenceActivityInput): Promise<PresenceActivityResponse>;
   invoke(channel: "deepseek:get-settings"): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "deepseek:save-settings", payload: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -158,6 +168,12 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     exportMemories() {
       return ipc.invoke("memory:export");
+    },
+    updateMemory(id: string, text: string) {
+      return ipc.invoke("memory:update", { id, text });
+    },
+    blockMemory(id: string) {
+      return ipc.invoke("memory:block", { id });
     },
     setPresenceActivity(input: PresenceActivityInput) {
       return ipc.invoke("presence:set-activity", input);
