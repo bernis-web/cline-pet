@@ -1275,6 +1275,17 @@ Extend `Window.clinePet`:
 
 - [ ] **Step 4: Add App handlers**
 
+Add this helper near `pushBubble()` in `src/app/renderer/App.tsx`. It is intentionally narrower than `pushBubble()`: it only replaces the currently visible bubble when that bubble is already a notice, so memory edit/block success feedback does not get hidden behind the previous success notice while chat/readable bubbles keep their priority.
+
+```ts
+  function pushReplacingNotice(text: string) {
+    const notice = bubbleFromNotice(text);
+    setBubbleState((state) => state.current?.kind === "notice"
+      ? { current: notice, queue: state.queue.filter((item) => item.kind !== "notice") }
+      : enqueueBubble(state, notice));
+  }
+```
+
 Add these functions after `deleteMemoryFromPanel()` in `src/app/renderer/App.tsx`:
 
 ```ts
@@ -1293,7 +1304,7 @@ Add these functions after `deleteMemoryFromPanel()` in `src/app/renderer/App.tsx
         ...current,
         memories: current.memories.map((memory) => memory.id === id ? result.data : memory)
       } : current);
-      pushBubble(bubbleFromNotice("我记住修正啦。"));
+      pushReplacingNotice("我记住修正啦。");
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
@@ -1311,7 +1322,7 @@ Add these functions after `deleteMemoryFromPanel()` in `src/app/renderer/App.tsx
     }
     if (result.ok) {
       setMemoryOverview((current) => current ? { ...current, memories: current.memories.filter((memory) => memory.id !== id) } : current);
-      pushBubble(bubbleFromNotice("好，我以后不会再记类似内容。"));
+      pushReplacingNotice("好，我以后不会再记类似内容。");
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
