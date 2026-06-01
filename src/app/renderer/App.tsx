@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PetStatus } from "../../shared/statuses";
 import { ChatHistoryPanel } from "./ChatHistoryPanel";
 import { DeepSeekSettingsPanel } from "./DeepSeekSettingsPanel";
@@ -23,6 +23,7 @@ declare global {
       sendChatMessage?(text: string): Promise<{ ok: true; text: string } | { ok: false; errorCode: string; message: string }>;
       getChatHistory?(): Promise<ChatHistoryResponse>;
       clearChatHistory?(): Promise<ClearChatHistoryResponse>;
+      setPresenceActivity?(input: { userIsReading?: boolean }): Promise<{ ok: true } | { ok: false; message: string }>;
       getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
       saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
       movePetWindowBy?(dx: number, dy: number): Promise<{ ok: boolean; message?: string }>;
@@ -62,6 +63,7 @@ export function App() {
   const [deepSeekSettings, setDeepSeekSettings] = useState<DeepSeekSettings | null>(null);
   const [images, setImages] = useState(defaultImages);
   const [variants, setVariants] = useState<Partial<Record<PetStatus, string[]>>>({});
+  const lastPresenceReading = useRef(false);
   const bubble = bubbleState.current;
 
   function pushBubble(next: BubbleMessage | null) {
@@ -211,6 +213,19 @@ export function App() {
     }, bubble.autoHideMs);
     return () => window.clearTimeout(timer);
   }, [bubble]);
+
+  useEffect(() => {
+    const userIsReading = bubble?.kind === "chat" && bubble.mode === "readable";
+    if (lastPresenceReading.current === userIsReading) return;
+    lastPresenceReading.current = userIsReading;
+
+    try {
+      const result = window.clinePet?.setPresenceActivity?.({ userIsReading });
+      Promise.resolve(result).catch(() => undefined);
+    } catch {
+      // Presence reporting is best-effort; reading UI should never break if IPC is unavailable.
+    }
+  }, [bubble?.id, bubble?.kind, bubble?.mode]);
 
   const displayStatus = temporaryStatus ?? visibleStatus;
   const displayImageSrc = temporaryImageSrc ?? images[displayStatus] ?? defaultImages.idle;

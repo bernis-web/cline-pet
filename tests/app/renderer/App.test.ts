@@ -179,6 +179,57 @@ describe("renderer App", () => {
     expect(document.querySelector(".chat-history-panel")?.textContent).toContain("今天好累");
   });
 
+  it("reports reading activity while a long chat bubble is open in readable mode", async () => {
+    const longReply = "卡卡会慢慢说清楚，也会等你读完这一段，不会在你认真阅读的时候突然插话。".repeat(8);
+    const setPresenceActivity = vi.fn().mockResolvedValue({ ok: true });
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      sendChatMessage: vi.fn().mockResolvedValue({ ok: true, text: longReply }),
+      getChatHistory: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+      setPresenceActivity
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (document.querySelector(".pet-stage") as HTMLElement).dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    });
+
+    const input = document.querySelector('input[name="message"]') as HTMLInputElement;
+    const form = document.querySelector(".chat-input") as HTMLFormElement;
+    await act(async () => {
+      input.value = "慢慢告诉我";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+
+    expect(document.querySelector(".speech-bubble")?.textContent).toContain("点开读完");
+
+    await act(async () => {
+      (document.querySelector(".speech-bubble") as HTMLElement).click();
+      await Promise.resolve();
+    });
+
+    expect(setPresenceActivity).toHaveBeenCalledWith({ userIsReading: true });
+
+    await act(async () => {
+      (document.querySelector(".speech-bubble-close") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+
+    expect(setPresenceActivity).toHaveBeenLastCalledWith({ userIsReading: false });
+  });
+
   it("applies motion class for visible status", async () => {
     let statusHandler: ((payload: any) => void) | null = null;
     (window as any).clinePet = {
