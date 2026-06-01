@@ -40,6 +40,15 @@ export type ContextMemoryItem = {
   updatedAt: string;
 };
 
+export type MemoryBlockRule = {
+  id: string;
+  text: string;
+  normalizedText: string;
+  kind?: ContextMemoryItem["kind"];
+  sourceMemoryId?: string;
+  createdAt: string;
+};
+
 export type MemoryPromptContext = {
   profileSummary: string | null;
   relationshipSummary: string | null;

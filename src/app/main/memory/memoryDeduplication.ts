@@ -4,7 +4,7 @@ export function normalizeMemoryText(text: string) {
   return text.toLowerCase().replace(/[\p{P}\p{S}\s]+/gu, "").trim();
 }
 
-function overlapScore(a: string, b: string) {
+export function memoryTextOverlapScore(a: string, b: string) {
   const aTerms = new Set(a.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean));
   const bTerms = new Set(b.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean));
   if (!aTerms.size || !bTerms.size) return 0;
@@ -17,7 +17,7 @@ export function mergeContextMemory(existing: ContextMemoryItem[], candidate: Con
   const matchIndex = existing.findIndex((item) => {
     if (item.kind !== candidate.kind) return false;
     if (normalizeMemoryText(item.text) === normalizedCandidate) return true;
-    return overlapScore(item.text, candidate.text) >= 0.75;
+    return memoryTextOverlapScore(item.text, candidate.text) >= 0.75;
   });
   if (matchIndex === -1) return [candidate, ...existing];
 
