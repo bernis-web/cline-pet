@@ -20,7 +20,9 @@ describe("bubble message strategy", () => {
       text: "正在分析项目",
       status: "thinking",
       createdAt: now,
-      autoHideMs: 4500
+      autoHideMs: 4500,
+      mode: "transient",
+      isLongText: false
     });
   });
 
@@ -56,7 +58,20 @@ describe("bubble message strategy", () => {
       kind: "chat",
       text: "你好，我是卡卡。",
       createdAt: now,
-      autoHideMs: 5000
+      autoHideMs: 5000,
+      mode: "transient",
+      isLongText: false
     });
+  });
+
+  it("marks long chat text so the bubble can be opened into reading mode", () => {
+    const bubble = bubbleFromChat("这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。这是一段很长的回复。", now);
+
+    expect(bubble).toEqual(expect.objectContaining({
+      kind: "chat",
+      autoHideMs: 5000,
+      mode: "transient",
+      isLongText: true
+    }));
   });
 });

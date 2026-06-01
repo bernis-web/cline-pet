@@ -3,6 +3,7 @@ import { PetStatus } from "../../shared/statuses";
 import { DeepSeekSettingsPanel } from "./DeepSeekSettingsPanel";
 import { PetView } from "./PetView";
 import { bubbleFromChat, bubbleFromNotice, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
+import { enqueueBubble, makeBubbleReadable, popNextBubble } from "./bubbleQueue";
 import type { DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, RendererPetPack } from "./petBridge";
 import idleImage from "../../assets/default-pet/idle.svg";
 import thinkingImage from "../../assets/default-pet/thinking.svg";
@@ -46,7 +47,7 @@ export function App() {
   const [visibleStatus, setVisibleStatus] = useState<PetStatus>("idle");
   const [temporaryStatus, setTemporaryStatus] = useState<PetStatus | null>(null);
   const [temporaryImageSrc, setTemporaryImageSrc] = useState<string | null>(null);
-  const [bubble, setBubble] = useState<BubbleMessage | null>(null);
+  const [bubbleState, setBubbleState] = useState<{ current: BubbleMessage | null; queue: BubbleMessage[] }>({ current: null, queue: [] });
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPending, setChatPending] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -54,6 +55,12 @@ export function App() {
   const [deepSeekSettings, setDeepSeekSettings] = useState<DeepSeekSettings | null>(null);
   const [images, setImages] = useState(defaultImages);
   const [variants, setVariants] = useState<Partial<Record<PetStatus, string[]>>>({});
+  const bubble = bubbleState.current;
+
+  function pushBubble(next: BubbleMessage | null) {
+    if (!next) return;
+    setBubbleState((state) => enqueueBubble(state, next));
+  }
 
   function applyPack(payload: RendererPetPack) {
     setImages({ ...defaultImages, ...payload.stateImages });
@@ -77,7 +84,7 @@ export function App() {
     if (result.ok) {
       setDeepSeekSettings(result.data);
     } else {
-      setBubble(bubbleFromNotice(result.message));
+      pushBubble(bubbleFromNotice(result.message));
     }
   }
 
@@ -92,16 +99,16 @@ export function App() {
     setSettingsPending(false);
 
     if (!result) {
-      setBubble(bubbleFromNotice("DeepSeek 设置通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("DeepSeek 设置通道还没有准备好。"));
       return;
     }
 
     if (result.ok) {
       setDeepSeekSettings(result.data);
       setSettingsOpen(false);
-      setBubble(bubbleFromNotice("DeepSeek 已保存，可以直接聊天啦。"));
+      pushBubble(bubbleFromNotice("DeepSeek 已保存，可以直接聊天啦。"));
     } else {
-      setBubble(bubbleFromNotice(result.message));
+      pushBubble(bubbleFromNotice(result.message));
     }
   }
 
@@ -116,31 +123,33 @@ export function App() {
 
   async function sendChat(text: string) {
     setChatPending(true);
-    setBubble({
+    pushBubble({
       id: `notice-${Date.now()}`,
       kind: "notice",
       text: "卡卡正在想...",
       createdAt: new Date().toISOString(),
-      autoHideMs: 3000
+      autoHideMs: 3000,
+      mode: "transient",
+      isLongText: false
     });
 
     const result = await window.clinePet?.sendChatMessage?.(text);
     setChatPending(false);
 
     if (!result) {
-      setBubble(bubbleFromNotice("聊天通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("聊天通道还没有准备好。"));
       return;
     }
 
     if (result.ok) {
-      setBubble(bubbleFromChat(result.text));
+      pushBubble(bubbleFromChat(result.text));
       setChatOpen(false);
     } else {
       if (result.errorCode === "DEEPSEEK_API_KEY_MISSING") {
         setSettingsOpen(true);
         await refreshDeepSeekSettings();
       }
-      setBubble(bubbleFromNotice(result.message));
+      pushBubble(bubbleFromNotice(result.message));
     }
   }
 
@@ -148,7 +157,7 @@ export function App() {
     window.clinePet?.onPetStatus((payload) => {
       setVisibleStatus(payload.visibleStatus ?? payload.status);
       const nextBubble = bubbleFromStatus(payload);
-      if (nextBubble) setBubble(nextBubble);
+      if (nextBubble) pushBubble(nextBubble);
     });
 
     window.clinePet?.onPetPack((payload) => applyPack(payload));
@@ -159,7 +168,7 @@ export function App() {
     if (!bubble?.autoHideMs) return;
     const bubbleId = bubble.id;
     const timer = window.setTimeout(() => {
-      setBubble((current) => current?.id === bubbleId ? null : current);
+      setBubbleState((current) => current.current?.id === bubbleId ? popNextBubble({ current: null, queue: current.queue }) : current);
     }, bubble.autoHideMs);
     return () => window.clearTimeout(timer);
   }, [bubble]);
@@ -176,6 +185,8 @@ export function App() {
         chatOpen={chatOpen}
         chatPending={chatPending}
         onStartChat={() => setChatOpen((open) => !open)}
+        onOpenReadableBubble={() => setBubbleState((state) => state.current ? { ...state, current: makeBubbleReadable(state.current) } : state)}
+        onCloseBubble={() => setBubbleState((state) => popNextBubble({ current: null, queue: state.queue }))}
         onOpenSettings={openDeepSeekSettings}
         onHeadPatStart={() => {
           setTemporaryStatus("head-pat");

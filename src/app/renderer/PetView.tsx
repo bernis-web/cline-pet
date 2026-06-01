@@ -31,12 +31,14 @@ export type PetViewProps = {
   onHeadPatCancel(): void;
   onDragStart(): void;
   onStartChat(): void;
+  onOpenReadableBubble(): void;
+  onCloseBubble(): void;
   onMoveWindowBy(dx: number, dy: number): void;
   onChatSubmit(text: string): void;
   onChatCancel(): void;
 };
 
-export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpenSettings, onHeadPatStart, onHeadPatEnd, onHeadPatCancel, onDragStart, onStartChat, onMoveWindowBy, onChatSubmit, onChatCancel }: PetViewProps) {
+export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpenSettings, onHeadPatStart, onHeadPatEnd, onHeadPatCancel, onDragStart, onStartChat, onOpenReadableBubble, onCloseBubble, onMoveWindowBy, onChatSubmit, onChatCancel }: PetViewProps) {
   const pointer = useRef<PointerState | null>(null);
 
   function distanceFromStart(state: { startX: number; startY: number }, event: MouseEvent | ReactMouseEvent) {
@@ -143,7 +145,7 @@ export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpe
 
   return (
     <main className="pet-shell">
-      <SpeechBubble message={bubble} />
+      <SpeechBubble message={bubble} onOpenReadable={onOpenReadableBubble} onClose={onCloseBubble} />
       <section className="pet-stage" onMouseDown={startPointerInteraction} onDoubleClick={onStartChat} onContextMenu={openSettings} title="拖动移动，长按轻摸，双击聊天，右键设置">
         <img className={`pet-image pet-motion-${status}`} src={imageSrc} alt={toStatusLabel(status)} draggable={false} />
       </section>
