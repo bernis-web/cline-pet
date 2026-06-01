@@ -138,7 +138,8 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
   - `chatCoordinator` 统一串联记忆检索、聊天回复、历史写入、关系成长和心情更新。
   - `memoryExtractionService` 用 DeepSeek 对聊天做结构化记忆提炼，并写入 `context-memory.jsonl`。
   - `relationshipEvents` 让聊天也能缓慢增长 familiarity/affection/engagement/trust。
-  - `presenceService` 避免在用户阅读聊天气泡时插入主动陪伴，并允许低频长工时提醒喝水。
+  - `presenceService` 现在已经接入运行时：长回复进入 readable 模式时 renderer 通过 `presence:set-activity` 告诉 main，main 会把 `userIsReading` 传给 presence，避免用户读长回复时被主动气泡打断。
+  - main 进程会记录连续 `loading` / `thinking` 工作段；超过 90 分钟才允许低频“喝口水”提醒，并且仍受 presence cooldown 限制。
 - DeepSeek 记忆提炼只发送聊天文本和紧凑记忆摘要，不自动读取文件、代码、屏幕、终端输出或日志。
 - Cyber Life v1 范围：可阅读长回复、历史面板、记忆闭环、关系成长、低频主动陪伴、气泡队列。
 
@@ -214,8 +215,8 @@ npm run simulate
 最近一次完整验证（2026-06-01）：
 
 ```text
-Test Files  31 passed (31)
-Tests       104 passed (104)
+Test Files  38 passed (38)
+Tests       135 passed (135)
 npm run build: renderer/main/preload passed
 ```
 

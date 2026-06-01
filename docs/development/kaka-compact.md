@@ -13,12 +13,12 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 
 ## Latest important commit
 
-- `85b43a3 feat: add Kaka chat history panel`
-- `99847f8 feat: add readable Kaka chat bubbles`
-- `cd23b18 feat: coordinate Kaka chat memory loop`
-- `93df7cd feat: grow relationship from chat memory`
-- `94dcc7c feat: add DeepSeek memory extraction`
-- `e774a8b feat: add local chat history store`
+- `01f8909 feat: wire Kaka presence runtime`
+- `ae6515b feat: report Kaka readable chat activity`
+- `016433e feat: add presence activity bridge`
+- `7393eae feat: add Kaka presence runtime`
+- `88f69d4 docs: add kaka cyber life v1 finish plan`
+- `54e456d docs: add kaka cyber life v1 finish design`
 
 ## What is already built
 
@@ -32,6 +32,7 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Local chat history file: `chat-history.jsonl`.
 - Mood/pose/presence/head-pat modules exist.
 - Renderer supports bubbles, auto-hide, readable long chat bubbles, chat history panel, drag, double-click chat, right-click settings, long-press head-pat.
+- Presence runtime now receives readable long-chat activity from the renderer and treats continuous `loading` / `thinking` over 90 minutes as a long-work care opportunity.
 
 ## Main files to know
 
@@ -70,8 +71,8 @@ npm run simulate
 Expected verification as of 2026-06-01:
 
 ```text
-Test Files 31 passed
-Tests 104 passed
+Test Files 38 passed
+Tests 135 passed
 Build renderer/main/preload passed
 ```
 
@@ -111,8 +112,8 @@ If these work but Cline tool calls do not, rerun integration and reload VS Code/
 
 ## Likely next tasks
 
-1. Finish Cyber Life v1 verification: full `npm test`, `npm run build`, push current feature commits.
-2. Merge feature branch to `main` after user approves.
-3. Extend presence scheduling with recent-reading/long-work inputs from the renderer and main loop.
-4. Improve MCP connection UX: clearer README troubleshooting and maybe a tray diagnostic action showing MCP settings path.
-5. Add richer mood transitions after chat sentiment detection instead of treating all successful chats as positive.
+1. Review and merge the Cyber Life v1 PR after GitHub checks/review.
+2. Start Cyber Life v2 design: richer mood transitions, user-visible memory controls, and relationship/profile UI.
+3. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
+4. Add export/clear controls for memory files beyond raw chat history.
+5. Consider richer proactive rhythms after v1 proves stable.
