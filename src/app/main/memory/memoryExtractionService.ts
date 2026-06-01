@@ -3,6 +3,7 @@ import type { DeepSeekConfig } from "../config.js";
 import { requestDeepSeekChat, type DeepSeekChatResult, type DeepSeekMessage } from "../deepseekClient.js";
 import { readContextMemories, writeContextMemories } from "./contextStore.js";
 import { mergeContextMemory } from "./memoryDeduplication.js";
+import { filterBlockedContextMemoryCandidates, readMemoryBlockRules } from "./memoryBlocklistStore.js";
 import type { ContextMemoryItem } from "./memoryTypes.js";
 
 export type MemoryExtractionSentiment = "positive" | "neutral" | "negative" | "tired" | "stressed" | "focused";
@@ -124,7 +125,10 @@ export async function extractAndStoreMemories(input: {
   if (!response.ok) return response;
   const parsed = parseMemoryExtractionJson(response.data.text);
   if (!parsed.ok) return parsed;
-  const nextItems = toItems(parsed.data, input.turn.createdAt);
+  const nextItems = filterBlockedContextMemoryCandidates(
+    toItems(parsed.data, input.turn.createdAt),
+    readMemoryBlockRules(input.root)
+  );
   const merged = nextItems.reduce((items, candidate) => mergeContextMemory(items, candidate), readContextMemories(input.root));
   writeContextMemories(input.root, merged);
   return { ok: true as const, data: { extraction: parsed.data, memoryIds: nextItems.map((memory) => memory.id) } };
