@@ -33,6 +33,7 @@ declare global {
       exportPrivacyData?(): Promise<PrivacyExportResponse>;
       deleteMemoryBlockRule?(id: string): Promise<BlockRuleMutationResponse>;
       clearMemoryBlockRules?(): Promise<BlockRuleMutationResponse>;
+      blockChatHistoryTurn?(id: string): Promise<BlockRuleMutationResponse>;
       setPresenceActivity?(input: { userIsReading?: boolean }): Promise<{ ok: true } | { ok: false; message: string }>;
       getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
       saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -181,6 +182,29 @@ export function App() {
     }
     if (result.ok) {
       await refreshPrivacyOverview();
+    } else {
+      pushBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function blockChatHistoryTurnFromPanel(id: string) {
+    const confirmed = typeof window.confirm === "function"
+      ? window.confirm("这会让卡卡以后避免把“你说的这句话”整理成长期记忆。不会删除这条聊天历史，也不会删除已有长期记忆。继续吗？")
+      : true;
+    if (!confirmed) return;
+
+    setPrivacyPending(true);
+    const result = await window.clinePet?.blockChatHistoryTurn?.(id);
+    setPrivacyPending(false);
+
+    if (!result) {
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
+      return;
+    }
+
+    if (result.ok) {
+      await refreshPrivacyOverview();
+      pushReplacingNotice("好，我以后不会把这句话整理成长期记忆。");
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
@@ -429,6 +453,7 @@ export function App() {
         onDeleteBlockRule={deleteBlockRuleFromPanel}
         onClearBlockRules={clearBlockRulesFromPanel}
         onClearChatHistory={clearChatHistoryFromPanel}
+        onBlockChatHistoryTurn={blockChatHistoryTurnFromPanel}
       />
       <DeepSeekSettingsPanel open={settingsOpen} pending={settingsPending} settings={deepSeekSettings} onSave={saveDeepSeekSettings} onCancel={() => setSettingsOpen(false)} />
     </>

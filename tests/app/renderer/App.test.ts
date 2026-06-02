@@ -195,6 +195,83 @@ describe("renderer App", () => {
     expect(document.querySelector(".privacy-history-section")?.textContent).toContain("今天好累");
   });
 
+  it("blocks a chat-history turn from the privacy panel and refreshes overview", async () => {
+    const initialOverview = {
+      relationship: {
+        stage: "familiar",
+        stageLabel: "熟悉",
+        stageDescription: "卡卡已经记得一些与你相处的节奏。",
+        familiarity: 30,
+        affection: 30,
+        engagement: 30,
+        trust: 30,
+        updatedAt: "2026-06-01T01:00:00.000Z"
+      },
+      memories: [],
+      blockRules: [],
+      chatHistory: [{
+        id: "turn-1",
+        userText: "今天好累",
+        assistantText: "先喝口水，我在旁边陪你。",
+        createdAt: "2026-06-01T01:00:00.000Z",
+        sentiment: "tired",
+        memoryIds: []
+      }],
+      counts: { memories: 0, blockRules: 0, chatHistoryTurns: 1 }
+    };
+    const refreshedOverview = {
+      ...initialOverview,
+      blockRules: [{
+        id: "rule-1",
+        text: "今天好累",
+        createdAt: "2026-06-01T02:00:00.000Z"
+      }],
+      counts: { memories: 0, blockRules: 1, chatHistoryTurns: 1 }
+    };
+    const getPrivacyOverview = vi.fn()
+      .mockResolvedValueOnce({ ok: true, data: initialOverview })
+      .mockResolvedValueOnce({ ok: true, data: refreshedOverview });
+    const blockChatHistoryTurn = vi.fn().mockResolvedValue({ ok: true });
+    window.confirm = vi.fn().mockReturnValue(true);
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      getPrivacyOverview,
+      blockChatHistoryTurn
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (document.querySelector(".chat-history-trigger") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (document.querySelector(".chat-history-block") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+
+    expect(blockChatHistoryTurn).toHaveBeenCalledWith("turn-1");
+    expect(getPrivacyOverview).toHaveBeenCalledTimes(2);
+    expect(document.querySelector(".speech-bubble")?.textContent).toContain("好，我以后不会把这句话整理成长期记忆");
+
+    await act(async () => {
+      (document.querySelector('[data-privacy-tab="blocklist"]') as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+
+    expect(document.querySelector(".privacy-blocklist-section")?.textContent).toContain("今天好累");
+  });
+
   it("opens memory panel and manages long-term memories", async () => {
     const initialOverview = {
       relationship: {
