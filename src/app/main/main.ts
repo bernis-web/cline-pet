@@ -25,6 +25,7 @@ import {
   updateContextMemoryForUser
 } from "./memory/memoryManagementService.js";
 import {
+  blockChatHistoryTurnForUser,
   clearMemoryBlockRulesForUser,
   deleteMemoryBlockRuleForUser,
   exportPrivacyDataForUser,
@@ -212,6 +213,9 @@ app.whenReady().then(async () => {
   ipcMain.handle("privacy:export", () => exportPrivacyDataForUser(appDataBaseDir));
   ipcMain.handle("memory-blocklist:delete", (_event, payload: { id?: string }) => deleteMemoryBlockRuleForUser(appDataBaseDir, payload?.id ?? ""));
   ipcMain.handle("memory-blocklist:clear", () => clearMemoryBlockRulesForUser(appDataBaseDir));
+  ipcMain.handle("chat-history:block", (_event, payload: { id?: string }) =>
+    blockChatHistoryTurnForUser(appDataBaseDir, payload?.id ?? "")
+  );
   await win.loadURL(rendererUrl);
   sendSelectedPack();
   showPetWindow(win);

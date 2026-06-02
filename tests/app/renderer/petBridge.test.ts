@@ -71,6 +71,7 @@ describe("renderer pet bridge", () => {
       .mockResolvedValueOnce({ ok: true, data: { counts: { memories: 0, blockRules: 0, chatHistoryTurns: 0 }, memories: [], blockRules: [], chatHistory: [] } })
       .mockResolvedValueOnce({ ok: true, data: "{}" })
       .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true })
       .mockResolvedValueOnce({ ok: true });
     const bridge = createRendererPetBridge({ on: vi.fn(), invoke } as any);
 
@@ -78,10 +79,12 @@ describe("renderer pet bridge", () => {
     await bridge.exportPrivacyData();
     await bridge.deleteMemoryBlockRule("rule-1");
     await bridge.clearMemoryBlockRules();
+    await bridge.blockChatHistoryTurn("turn-1");
 
     expect(invoke).toHaveBeenNthCalledWith(1, "privacy:get-overview");
     expect(invoke).toHaveBeenNthCalledWith(2, "privacy:export");
     expect(invoke).toHaveBeenNthCalledWith(3, "memory-blocklist:delete", { id: "rule-1" });
     expect(invoke).toHaveBeenNthCalledWith(4, "memory-blocklist:clear");
+    expect(invoke).toHaveBeenNthCalledWith(5, "chat-history:block", { id: "turn-1" });
   });
 });

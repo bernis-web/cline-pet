@@ -164,6 +164,7 @@ export type IpcLike = {
   invoke(channel: "privacy:export"): Promise<PrivacyExportResponse>;
   invoke(channel: "memory-blocklist:delete", payload: { id: string }): Promise<BlockRuleMutationResponse>;
   invoke(channel: "memory-blocklist:clear"): Promise<BlockRuleMutationResponse>;
+  invoke(channel: "chat-history:block", payload: { id: string }): Promise<BlockRuleMutationResponse>;
   invoke(channel: "presence:set-activity", payload: PresenceActivityInput): Promise<PresenceActivityResponse>;
   invoke(channel: "deepseek:get-settings"): Promise<DeepSeekSettingsResponse>;
   invoke(channel: "deepseek:save-settings", payload: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -220,6 +221,9 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     clearMemoryBlockRules() {
       return ipc.invoke("memory-blocklist:clear");
+    },
+    blockChatHistoryTurn(id: string) {
+      return ipc.invoke("chat-history:block", { id });
     },
     setPresenceActivity(input: PresenceActivityInput) {
       return ipc.invoke("presence:set-activity", input);
