@@ -7,6 +7,7 @@ import { readChatHistory } from "../../../src/app/main/memory/chatHistoryStore";
 import { readContextMemories } from "../../../src/app/main/memory/contextStore";
 import { readMemoryBlockRules, writeMemoryBlockRules } from "../../../src/app/main/memory/memoryBlocklistStore";
 import {
+  blockChatHistoryTurnForUser,
   clearMemoryBlockRulesForUser,
   deleteMemoryBlockRuleForUser,
   exportPrivacyDataForUser,
@@ -29,17 +30,29 @@ function writeMemories(root: string, memories: ContextMemoryItem[]) {
   writeFileSync(file, memories.map((item) => JSON.stringify(item)).join("\n") + "\n", "utf8");
 }
 
-function writeHistory(root: string) {
+function writeHistoryTurns(root: string, turns: Array<{
+  id: string;
+  userText: string;
+  assistantText: string;
+  createdAt: string;
+  sentiment: string;
+  memoryIds: string[];
+  summary?: string;
+}>) {
   const file = getPaths({ APPDATA: root } as NodeJS.ProcessEnv).chatHistoryFile;
   mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${JSON.stringify({
+  writeFileSync(file, `${turns.map((turn) => JSON.stringify(turn)).join("\n")}\n`, "utf8");
+}
+
+function writeHistory(root: string) {
+  writeHistoryTurns(root, [{
     id: "turn-1",
     userText: "今天好累",
     assistantText: "先喝口水，我在旁边陪你。",
     createdAt: "2026-06-01T04:00:00.000Z",
     sentiment: "tired",
     memoryIds: ["memory-1"]
-  })}\n`, "utf8");
+  }]);
 }
 
 function memory(input: Partial<ContextMemoryItem> & Pick<ContextMemoryItem, "id" | "kind" | "text">): ContextMemoryItem {
@@ -143,5 +156,64 @@ describe("privacyManagementService", () => {
     expect(readMemoryBlockRules(root)).toEqual([]);
     expect(readContextMemories(root).map((item) => item.id)).toEqual(["memory-1"]);
     expect(readChatHistory(root).map((turn) => turn.id)).toEqual(["turn-1"]);
+  });
+
+  it("blocks a chat-history turn by user text without deleting history or existing memories", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeMemories(root, [memory({ id: "memory-1", kind: "fact", text: "保留记忆" })]);
+    writeHistory(root);
+
+    expect(blockChatHistoryTurnForUser(root, "turn-1")).toEqual({ ok: true });
+
+    expect(readMemoryBlockRules(root)).toEqual([
+      expect.objectContaining({ text: "今天好累" })
+    ]);
+    expect(readChatHistory(root).map((turn) => turn.id)).toEqual(["turn-1"]);
+    expect(readContextMemories(root).map((item) => item.id)).toEqual(["memory-1"]);
+  });
+
+  it("treats duplicate history blocking as success without creating duplicate rules", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeHistory(root);
+    writeMemoryBlockRules(root, [{
+      id: "rule-1",
+      text: "今天好累",
+      normalizedText: "今天好累",
+      createdAt: "2026-06-01T05:00:00.000Z"
+    }]);
+
+    expect(blockChatHistoryTurnForUser(root, "turn-1")).toEqual({ ok: true });
+    expect(readMemoryBlockRules(root)).toHaveLength(1);
+  });
+
+  it("reports invalid id, missing turn, and empty history user text clearly", () => {
+    const root = makeRoot();
+    roots.push(root);
+    writeHistoryTurns(root, [{
+      id: "turn-empty",
+      userText: "   ",
+      assistantText: "我听着呢。",
+      createdAt: "2026-06-01T06:00:00.000Z",
+      sentiment: "neutral",
+      memoryIds: []
+    }]);
+
+    expect(blockChatHistoryTurnForUser(root, "  ")).toEqual({
+      ok: false,
+      errorCode: "INVALID_CHAT_HISTORY_TURN_ID",
+      message: "聊天历史 id 无效。"
+    });
+    expect(blockChatHistoryTurnForUser(root, "missing")).toEqual({
+      ok: false,
+      errorCode: "CHAT_HISTORY_TURN_NOT_FOUND",
+      message: "这条聊天历史已经不存在了。"
+    });
+    expect(blockChatHistoryTurnForUser(root, "turn-empty")).toEqual({
+      ok: false,
+      errorCode: "EMPTY_CHAT_HISTORY_USER_TEXT",
+      message: "这条记录没有可加入不要再记的用户内容。"
+    });
   });
 });
