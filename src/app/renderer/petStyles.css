@@ -544,6 +544,18 @@ body,
   background: #93c5fd;
 }
 
+.chat-history-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chat-history-block {
+  border: 1px solid rgba(255, 185, 120, 0.45);
+  color: #ffd7ad;
+  background: rgba(255, 185, 120, 0.16);
+}
+
 .privacy-export-section {
   padding: 8px;
   border-radius: 14px;

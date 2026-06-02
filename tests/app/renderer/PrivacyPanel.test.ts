@@ -56,7 +56,8 @@ function renderPanel(initialTab: PrivacyTab = "memories", props: Partial<React.C
     onBlockMemory: vi.fn(),
     onDeleteBlockRule: vi.fn(),
     onClearBlockRules: vi.fn(),
-    onClearChatHistory: vi.fn()
+    onClearChatHistory: vi.fn(),
+    onBlockChatHistoryTurn: vi.fn()
   };
   act(() => {
     root.render(React.createElement(PrivacyPanel, {
@@ -137,7 +138,7 @@ describe("PrivacyPanel", () => {
     expect(callbacks.onClearBlockRules).toHaveBeenCalledOnce();
   });
 
-  it("supports chat history search, copy, and clear", async () => {
+  it("supports chat history search, copy, block, and clear", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     const { rootElement, callbacks } = renderPanel("history");
@@ -147,11 +148,13 @@ describe("PrivacyPanel", () => {
       search.value = "喝口水";
       search.dispatchEvent(new Event("input", { bubbles: true }));
       (rootElement.querySelector(".chat-history-copy") as HTMLButtonElement).click();
+      (rootElement.querySelector(".chat-history-block") as HTMLButtonElement).click();
       (rootElement.querySelector(".chat-history-clear") as HTMLButtonElement).click();
     });
 
     expect(rootElement.querySelector(".privacy-history-section")?.textContent).toContain("先喝口水");
     expect(writeText).toHaveBeenCalledWith("你：今天好累\n卡卡：先喝口水，我在旁边陪你。");
+    expect(callbacks.onBlockChatHistoryTurn).toHaveBeenCalledWith("turn-1");
     expect(callbacks.onClearChatHistory).toHaveBeenCalledOnce();
   });
 

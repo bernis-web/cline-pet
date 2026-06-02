@@ -16,6 +16,7 @@ export type PrivacyPanelProps = {
   onDeleteBlockRule(id: string): void;
   onClearBlockRules(): void;
   onClearChatHistory(): void;
+  onBlockChatHistoryTurn(id: string): void;
 };
 
 const kindLabels: Record<RendererContextMemory["kind"], string> = {
@@ -53,7 +54,8 @@ export function PrivacyPanel({
   onBlockMemory,
   onDeleteBlockRule,
   onClearBlockRules,
-  onClearChatHistory
+  onClearChatHistory,
+  onBlockChatHistoryTurn
 }: PrivacyPanelProps) {
   const [tab, setTab] = useState<PrivacyTab>(initialTab);
   const [memoryQuery, setMemoryQuery] = useState("");
@@ -245,15 +247,25 @@ export function PrivacyPanel({
                     <time>{formatTime(turn.createdAt)}</time>
                     <p><strong>你：</strong>{turn.userText}</p>
                     <p><strong>卡卡：</strong>{turn.assistantText}</p>
-                    <button
-                      className="chat-history-copy"
-                      type="button"
-                      onClick={() => {
-                        void navigator.clipboard?.writeText?.(`你：${turn.userText}\n卡卡：${turn.assistantText}`);
-                      }}
-                    >
-                      复制
-                    </button>
+                    <div className="chat-history-actions">
+                      <button
+                        className="chat-history-copy"
+                        type="button"
+                        onClick={() => {
+                          void navigator.clipboard?.writeText?.(`你：${turn.userText}\n卡卡：${turn.assistantText}`);
+                        }}
+                      >
+                        复制
+                      </button>
+                      <button
+                        className="chat-history-block"
+                        type="button"
+                        disabled={pending}
+                        onClick={() => onBlockChatHistoryTurn(turn.id)}
+                      >
+                        不要再记
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ol>

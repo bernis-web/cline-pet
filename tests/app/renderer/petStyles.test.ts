@@ -47,7 +47,9 @@ describe("pet renderer styles", () => {
     expect(styles).toContain(".block-rule-list");
     expect(styles).toContain(".block-rules-clear");
     expect(styles).toContain(".privacy-history-section");
+    expect(styles).toContain(".chat-history-actions");
     expect(styles).toContain(".chat-history-copy");
+    expect(styles).toContain(".chat-history-block");
     expect(styles).toContain(".privacy-export-section");
     expect(styles).toContain(".privacy-export-copy");
     expect(styles).toContain(".privacy-clear-actions");
