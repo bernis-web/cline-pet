@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { PetStatus } from "../../shared/statuses";
-import { ChatHistoryPanel } from "./ChatHistoryPanel";
 import { DeepSeekSettingsPanel } from "./DeepSeekSettingsPanel";
-import { MemoryPanel } from "./MemoryPanel";
 import { PetView } from "./PetView";
+import { PrivacyPanel } from "./PrivacyPanel";
 import { bubbleFromChat, bubbleFromNotice, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
 import { enqueueBubble, makeBubbleReadable, popNextBubble } from "./bubbleQueue";
-import type { RendererChatHistoryTurn } from "./chatHistoryTypes";
-import type { MemoryOverview } from "./memoryTypes";
-import type { BlockMemoryResponse, ChatHistoryResponse, ClearChatHistoryResponse, ClearMemoriesResponse, DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, DeleteMemoryResponse, ExportMemoriesResponse, MemoryOverviewResponse, RendererPetPack, UpdateMemoryResponse } from "./petBridge";
+import type { PrivacyTab } from "./privacyTypes";
+import type { BlockMemoryResponse, BlockRuleMutationResponse, ChatHistoryResponse, ClearChatHistoryResponse, ClearMemoriesResponse, DeepSeekSettings, DeepSeekSettingsInput, DeepSeekSettingsResponse, DeleteMemoryResponse, ExportMemoriesResponse, MemoryOverviewResponse, PrivacyExportResponse, PrivacyOverview, PrivacyOverviewResponse, RendererPetPack, UpdateMemoryResponse } from "./petBridge";
 import idleImage from "../../assets/default-pet/idle.svg";
 import thinkingImage from "../../assets/default-pet/thinking.svg";
 import workingImage from "../../assets/default-pet/working.svg";
@@ -31,6 +29,10 @@ declare global {
       exportMemories?(): Promise<ExportMemoriesResponse>;
       updateMemory?(id: string, text: string): Promise<UpdateMemoryResponse>;
       blockMemory?(id: string): Promise<BlockMemoryResponse>;
+      getPrivacyOverview?(): Promise<PrivacyOverviewResponse>;
+      exportPrivacyData?(): Promise<PrivacyExportResponse>;
+      deleteMemoryBlockRule?(id: string): Promise<BlockRuleMutationResponse>;
+      clearMemoryBlockRules?(): Promise<BlockRuleMutationResponse>;
       setPresenceActivity?(input: { userIsReading?: boolean }): Promise<{ ok: true } | { ok: false; message: string }>;
       getDeepSeekSettings?(): Promise<DeepSeekSettingsResponse>;
       saveDeepSeekSettings?(input: DeepSeekSettingsInput): Promise<DeepSeekSettingsResponse>;
@@ -63,12 +65,10 @@ export function App() {
   const [bubbleState, setBubbleState] = useState<{ current: BubbleMessage | null; queue: BubbleMessage[] }>({ current: null, queue: [] });
   const [chatOpen, setChatOpen] = useState(false);
   const [chatPending, setChatPending] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [historyPending, setHistoryPending] = useState(false);
-  const [chatHistory, setChatHistory] = useState<RendererChatHistoryTurn[]>([]);
-  const [memoryOpen, setMemoryOpen] = useState(false);
-  const [memoryPending, setMemoryPending] = useState(false);
-  const [memoryOverview, setMemoryOverview] = useState<MemoryOverview | null>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [privacyInitialTab, setPrivacyInitialTab] = useState<PrivacyTab>("memories");
+  const [privacyPending, setPrivacyPending] = useState(false);
+  const [privacyOverview, setPrivacyOverview] = useState<PrivacyOverview | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsPending, setSettingsPending] = useState(false);
   const [deepSeekSettings, setDeepSeekSettings] = useState<DeepSeekSettings | null>(null);
@@ -148,69 +148,56 @@ export function App() {
     }
   }
 
-  async function refreshChatHistory() {
-    setHistoryPending(true);
-    const result = await window.clinePet?.getChatHistory?.();
-    setHistoryPending(false);
-    if (!result) return;
+  async function refreshPrivacyOverview() {
+    setPrivacyPending(true);
+    const result = await window.clinePet?.getPrivacyOverview?.();
+    setPrivacyPending(false);
+    if (!result) {
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
+      return;
+    }
     if (result.ok) {
-      setChatHistory(result.data);
+      setPrivacyOverview(result.data);
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
   }
 
-  async function openChatHistory() {
-    setHistoryOpen(true);
-    await refreshChatHistory();
+  async function openPrivacyPanel(tab: PrivacyTab) {
+    setPrivacyInitialTab(tab);
+    setPrivacyOpen(true);
+    await refreshPrivacyOverview();
   }
 
   async function clearChatHistoryFromPanel() {
     const confirmed = typeof window.confirm === "function" ? window.confirm("清空本地对话历史？") : true;
     if (!confirmed) return;
-    setHistoryPending(true);
+    setPrivacyPending(true);
     const result = await window.clinePet?.clearChatHistory?.();
-    setHistoryPending(false);
-    if (!result) return;
-    if (result.ok) {
-      setChatHistory([]);
-    } else {
-      pushBubble(bubbleFromNotice(result.message));
-    }
-  }
-
-  async function refreshMemoryOverview() {
-    setMemoryPending(true);
-    const result = await window.clinePet?.getMemoryOverview?.();
-    setMemoryPending(false);
+    setPrivacyPending(false);
     if (!result) {
-      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
       return;
     }
     if (result.ok) {
-      setMemoryOverview(result.data);
+      await refreshPrivacyOverview();
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
-  }
-
-  async function openMemoryPanel() {
-    setMemoryOpen(true);
-    await refreshMemoryOverview();
   }
 
   async function deleteMemoryFromPanel(id: string) {
     const confirmed = typeof window.confirm === "function" ? window.confirm("删除这条长期记忆？之后卡卡不会再用它理解你。") : true;
     if (!confirmed) return;
-    setMemoryPending(true);
+    setPrivacyPending(true);
     const result = await window.clinePet?.deleteMemory?.(id);
-    setMemoryPending(false);
+    setPrivacyPending(false);
     if (!result) {
-      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
       return;
     }
     if (result.ok) {
-      setMemoryOverview((current) => current ? { ...current, memories: current.memories.filter((memory) => memory.id !== id) } : current);
+      await refreshPrivacyOverview();
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
@@ -219,18 +206,15 @@ export function App() {
   async function updateMemoryFromPanel(id: string, text: string) {
     const confirmed = typeof window.confirm === "function" ? window.confirm("保存这条长期记忆的修改？") : true;
     if (!confirmed) return;
-    setMemoryPending(true);
+    setPrivacyPending(true);
     const result = await window.clinePet?.updateMemory?.(id, text);
-    setMemoryPending(false);
+    setPrivacyPending(false);
     if (!result) {
-      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
       return;
     }
     if (result.ok) {
-      setMemoryOverview((current) => current ? {
-        ...current,
-        memories: current.memories.map((memory) => memory.id === id ? result.data : memory)
-      } : current);
+      await refreshPrivacyOverview();
       pushReplacingNotice("我记住修正啦。");
     } else {
       pushBubble(bubbleFromNotice(result.message));
@@ -240,15 +224,15 @@ export function App() {
   async function blockMemoryFromPanel(id: string) {
     const confirmed = typeof window.confirm === "function" ? window.confirm("删除这条长期记忆，并让卡卡以后不要再记类似内容？") : true;
     if (!confirmed) return;
-    setMemoryPending(true);
+    setPrivacyPending(true);
     const result = await window.clinePet?.blockMemory?.(id);
-    setMemoryPending(false);
+    setPrivacyPending(false);
     if (!result) {
-      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
       return;
     }
     if (result.ok) {
-      setMemoryOverview((current) => current ? { ...current, memories: current.memories.filter((memory) => memory.id !== id) } : current);
+      await refreshPrivacyOverview();
       pushReplacingNotice("好，我以后不会再记类似内容。");
     } else {
       pushBubble(bubbleFromNotice(result.message));
@@ -258,26 +242,62 @@ export function App() {
   async function clearMemoriesFromPanel() {
     const confirmed = typeof window.confirm === "function" ? window.confirm("清空所有长期记忆？对话历史不会被删除，但卡卡会忘掉已提炼的长期记忆。") : true;
     if (!confirmed) return;
-    setMemoryPending(true);
+    setPrivacyPending(true);
     const result = await window.clinePet?.clearMemories?.();
-    setMemoryPending(false);
+    setPrivacyPending(false);
     if (!result) {
-      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
       return;
     }
     if (result.ok) {
-      setMemoryOverview((current) => current ? { ...current, memories: [] } : current);
+      await refreshPrivacyOverview();
     } else {
       pushBubble(bubbleFromNotice(result.message));
     }
   }
 
-  async function exportMemoriesFromPanel() {
-    setMemoryPending(true);
-    const result = await window.clinePet?.exportMemories?.();
-    setMemoryPending(false);
+  async function deleteBlockRuleFromPanel(id: string) {
+    const confirmed = typeof window.confirm === "function" ? window.confirm("撤销这条“不要再记”规则？以后类似内容可能会再次被卡卡提炼为长期记忆。") : true;
+    if (!confirmed) return;
+    setPrivacyPending(true);
+    const result = await window.clinePet?.deleteMemoryBlockRule?.(id);
+    setPrivacyPending(false);
     if (!result) {
-      pushBubble(bubbleFromNotice("记忆通道还没有准备好。"));
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
+      return;
+    }
+    if (result.ok) {
+      await refreshPrivacyOverview();
+      pushReplacingNotice("这条不要再记规则已撤销。");
+    } else {
+      pushBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function clearBlockRulesFromPanel() {
+    const confirmed = typeof window.confirm === "function" ? window.confirm("清空所有“不要再记”规则？这不会恢复已删除的长期记忆，但以后类似内容可能会再次被记住。") : true;
+    if (!confirmed) return;
+    setPrivacyPending(true);
+    const result = await window.clinePet?.clearMemoryBlockRules?.();
+    setPrivacyPending(false);
+    if (!result) {
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
+      return;
+    }
+    if (result.ok) {
+      await refreshPrivacyOverview();
+      pushReplacingNotice("不要再记规则已清空。");
+    } else {
+      pushBubble(bubbleFromNotice(result.message));
+    }
+  }
+
+  async function exportPrivacyDataFromPanel() {
+    setPrivacyPending(true);
+    const result = await window.clinePet?.exportPrivacyData?.();
+    setPrivacyPending(false);
+    if (!result) {
+      pushBubble(bubbleFromNotice("隐私数据通道还没有准备好。"));
       return;
     }
     if (!result.ok) {
@@ -286,9 +306,9 @@ export function App() {
     }
     try {
       await navigator.clipboard?.writeText?.(result.data);
-      pushBubble(bubbleFromNotice("长期记忆 JSON 已复制到剪贴板。"));
+      pushBubble(bubbleFromNotice("隐私数据 JSON 已复制到剪贴板。"));
     } catch {
-      pushBubble(bubbleFromNotice("剪贴板不可用，暂时无法复制长期记忆。"));
+      pushBubble(bubbleFromNotice("剪贴板不可用，暂时无法复制隐私数据。"));
     }
   }
 
@@ -315,7 +335,7 @@ export function App() {
     if (result.ok) {
       pushBubble(bubbleFromChat(result.text));
       setChatOpen(false);
-      void refreshChatHistory();
+      if (privacyOpen) void refreshPrivacyOverview();
     } else {
       if (result.errorCode === "DEEPSEEK_API_KEY_MISSING") {
         setSettingsOpen(true);
@@ -370,8 +390,8 @@ export function App() {
         chatOpen={chatOpen}
         chatPending={chatPending}
         onStartChat={() => setChatOpen((open) => !open)}
-        onOpenHistory={openChatHistory}
-        onOpenMemory={openMemoryPanel}
+        onOpenHistory={() => void openPrivacyPanel("history")}
+        onOpenMemory={() => void openPrivacyPanel("memories")}
         onOpenReadableBubble={() => setBubbleState((state) => state.current ? { ...state, current: makeBubbleReadable(state.current) } : state)}
         onCloseBubble={() => setBubbleState((state) => popNextBubble({ current: null, queue: state.queue }))}
         onOpenSettings={openDeepSeekSettings}
@@ -395,17 +415,20 @@ export function App() {
         onChatSubmit={sendChat}
         onChatCancel={() => setChatOpen(false)}
       />
-      <ChatHistoryPanel open={historyOpen} pending={historyPending} turns={chatHistory} onClose={() => setHistoryOpen(false)} onClear={clearChatHistoryFromPanel} />
-      <MemoryPanel
-        open={memoryOpen}
-        pending={memoryPending}
-        overview={memoryOverview}
-        onClose={() => setMemoryOpen(false)}
-        onDelete={deleteMemoryFromPanel}
-        onClear={clearMemoriesFromPanel}
-        onExport={exportMemoriesFromPanel}
-        onUpdate={updateMemoryFromPanel}
-        onBlock={blockMemoryFromPanel}
+      <PrivacyPanel
+        open={privacyOpen}
+        pending={privacyPending}
+        overview={privacyOverview}
+        initialTab={privacyInitialTab}
+        onClose={() => setPrivacyOpen(false)}
+        onDeleteMemory={deleteMemoryFromPanel}
+        onClearMemories={clearMemoriesFromPanel}
+        onExportPrivacyData={exportPrivacyDataFromPanel}
+        onUpdateMemory={updateMemoryFromPanel}
+        onBlockMemory={blockMemoryFromPanel}
+        onDeleteBlockRule={deleteBlockRuleFromPanel}
+        onClearBlockRules={clearBlockRulesFromPanel}
+        onClearChatHistory={clearChatHistoryFromPanel}
       />
       <DeepSeekSettingsPanel open={settingsOpen} pending={settingsPending} settings={deepSeekSettings} onSave={saveDeepSeekSettings} onCancel={() => setSettingsOpen(false)} />
     </>

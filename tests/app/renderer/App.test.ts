@@ -142,22 +142,37 @@ describe("renderer App", () => {
   });
 
   it("opens the chat history panel and loads stored conversations", async () => {
-    const getChatHistory = vi.fn().mockResolvedValue({
+    const getPrivacyOverview = vi.fn().mockResolvedValue({
       ok: true,
-      data: [{
-        id: "t1",
-        userText: "今天好累",
-        assistantText: "先喝口水，我在旁边陪你。",
-        createdAt: "2026-06-01T01:00:00.000Z",
-        sentiment: "tired",
-        memoryIds: []
-      }]
+      data: {
+        relationship: {
+          stage: "familiar",
+          stageLabel: "熟悉",
+          stageDescription: "卡卡已经记得一些与你相处的节奏。",
+          familiarity: 30,
+          affection: 30,
+          engagement: 30,
+          trust: 30,
+          updatedAt: "2026-06-01T01:00:00.000Z"
+        },
+        memories: [],
+        blockRules: [],
+        chatHistory: [{
+          id: "t1",
+          userText: "今天好累",
+          assistantText: "先喝口水，我在旁边陪你。",
+          createdAt: "2026-06-01T01:00:00.000Z",
+          sentiment: "tired",
+          memoryIds: []
+        }],
+        counts: { memories: 0, blockRules: 0, chatHistoryTurns: 1 }
+      }
     });
     (window as any).clinePet = {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
-      getChatHistory,
+      getPrivacyOverview,
       clearChatHistory: vi.fn().mockResolvedValue({ ok: true })
     };
 
@@ -175,49 +190,64 @@ describe("renderer App", () => {
       await Promise.resolve();
     });
 
-    expect(getChatHistory).toHaveBeenCalledOnce();
-    expect(document.querySelector(".chat-history-panel")?.textContent).toContain("今天好累");
+    expect(getPrivacyOverview).toHaveBeenCalledOnce();
+    expect(document.querySelector(".privacy-panel")?.textContent).toContain("隐私与记忆");
+    expect(document.querySelector(".privacy-history-section")?.textContent).toContain("今天好累");
   });
 
   it("opens memory panel and manages long-term memories", async () => {
-    const getMemoryOverview = vi.fn().mockResolvedValue({
-      ok: true,
-      data: {
-        relationship: {
-          stage: "familiar",
-          stageLabel: "熟悉",
-          stageDescription: "卡卡已经记得一些与你相处的节奏。",
-          familiarity: 30,
-          affection: 30,
-          engagement: 30,
-          trust: 30,
+    const initialOverview = {
+      relationship: {
+        stage: "familiar",
+        stageLabel: "熟悉",
+        stageDescription: "卡卡已经记得一些与你相处的节奏。",
+        familiarity: 30,
+        affection: 30,
+        engagement: 30,
+        trust: 30,
+        updatedAt: "2026-06-01T01:00:00.000Z"
+      },
+      memories: [
+        {
+          id: "m1",
+          kind: "preference",
+          text: "用户喜欢温柔提醒",
+          tags: ["chat"],
+          weight: 80,
+          createdAt: "2026-06-01T01:00:00.000Z",
           updatedAt: "2026-06-01T01:00:00.000Z"
         },
-        memories: [
-          {
-            id: "m1",
-            kind: "preference",
-            text: "用户喜欢温柔提醒",
-            tags: ["chat"],
-            weight: 80,
-            createdAt: "2026-06-01T01:00:00.000Z",
-            updatedAt: "2026-06-01T01:00:00.000Z"
-          },
-          {
-            id: "m2",
-            kind: "project-context",
-            text: "项目是卡卡桌宠",
-            tags: ["project"],
-            weight: 65,
-            createdAt: "2026-06-01T01:00:00.000Z",
-            updatedAt: "2026-06-01T02:00:00.000Z"
-          }
-        ]
-      }
-    });
+        {
+          id: "m2",
+          kind: "project-context",
+          text: "项目是卡卡桌宠",
+          tags: ["project"],
+          weight: 65,
+          createdAt: "2026-06-01T01:00:00.000Z",
+          updatedAt: "2026-06-01T02:00:00.000Z"
+        }
+      ],
+      blockRules: [],
+      chatHistory: [],
+      counts: { memories: 2, blockRules: 0, chatHistoryTurns: 0 }
+    };
+    const afterDeleteOverview = {
+      ...initialOverview,
+      memories: [initialOverview.memories[1]],
+      counts: { memories: 1, blockRules: 0, chatHistoryTurns: 0 }
+    };
+    const afterClearOverview = {
+      ...initialOverview,
+      memories: [],
+      counts: { memories: 0, blockRules: 0, chatHistoryTurns: 0 }
+    };
+    const getPrivacyOverview = vi.fn()
+      .mockResolvedValueOnce({ ok: true, data: initialOverview })
+      .mockResolvedValueOnce({ ok: true, data: afterDeleteOverview })
+      .mockResolvedValueOnce({ ok: true, data: afterClearOverview });
     const deleteMemory = vi.fn().mockResolvedValue({ ok: true });
     const clearMemories = vi.fn().mockResolvedValue({ ok: true });
-    const exportMemories = vi.fn().mockResolvedValue({ ok: true, data: "{\n  \"count\": 1\n}" });
+    const exportPrivacyData = vi.fn().mockResolvedValue({ ok: true, data: "{\n  \"count\": 1\n}" });
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     window.confirm = vi.fn().mockReturnValue(true);
@@ -225,10 +255,10 @@ describe("renderer App", () => {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
-      getMemoryOverview,
+      getPrivacyOverview,
       deleteMemory,
       clearMemories,
-      exportMemories
+      exportPrivacyData
     };
 
     const rootElement = document.createElement("div");
@@ -244,86 +274,96 @@ describe("renderer App", () => {
       await Promise.resolve();
     });
 
-    expect(getMemoryOverview).toHaveBeenCalledOnce();
-    expect(document.querySelector(".memory-panel")?.textContent).toContain("用户喜欢温柔提醒");
+    expect(getPrivacyOverview).toHaveBeenCalledOnce();
+    expect(document.querySelector(".privacy-panel")?.textContent).toContain("隐私与记忆");
+    expect(document.querySelector(".privacy-memory-section")?.textContent).toContain("用户喜欢温柔提醒");
 
     await act(async () => {
       (document.querySelector('[data-memory-delete="m1"]') as HTMLButtonElement).click();
       await Promise.resolve();
     });
     expect(deleteMemory).toHaveBeenCalledWith("m1");
-    expect(document.querySelector(".memory-panel")?.textContent).not.toContain("用户喜欢温柔提醒");
+    expect(document.querySelector(".privacy-memory-section")?.textContent).not.toContain("用户喜欢温柔提醒");
 
     await act(async () => {
-      (document.querySelector(".memory-export") as HTMLButtonElement).click();
+      (document.querySelector('[data-privacy-tab="export"]') as HTMLButtonElement).click();
       await Promise.resolve();
     });
-    expect(exportMemories).toHaveBeenCalledOnce();
+    await act(async () => {
+      (document.querySelector(".privacy-export-copy") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    expect(exportPrivacyData).toHaveBeenCalledOnce();
     expect(writeText).toHaveBeenCalledWith("{\n  \"count\": 1\n}");
 
     await act(async () => {
-      (document.querySelector(".memory-clear") as HTMLButtonElement).click();
+      (document.querySelector(".privacy-clear-memories") as HTMLButtonElement).click();
       await Promise.resolve();
     });
     expect(clearMemories).toHaveBeenCalledOnce();
-    expect(document.querySelector(".memory-empty")?.textContent).toContain("卡卡还没有长期记忆");
+    expect(document.querySelector(".privacy-export-section")?.textContent).toContain("长期记忆 0");
   });
 
   it("edits and blocks long-term memories from the memory panel", async () => {
-    const getMemoryOverview = vi.fn().mockResolvedValue({
-      ok: true,
-      data: {
-        relationship: {
-          stage: "familiar",
-          stageLabel: "熟悉",
-          stageDescription: "卡卡已经记得一些与你相处的节奏。",
-          familiarity: 30,
-          affection: 30,
-          engagement: 30,
-          trust: 30,
+    const initialOverview = {
+      relationship: {
+        stage: "familiar",
+        stageLabel: "熟悉",
+        stageDescription: "卡卡已经记得一些与你相处的节奏。",
+        familiarity: 30,
+        affection: 30,
+        engagement: 30,
+        trust: 30,
+        updatedAt: "2026-06-01T01:00:00.000Z"
+      },
+      memories: [
+        {
+          id: "m1",
+          kind: "preference",
+          text: "用户喜欢很吵的提醒",
+          tags: ["chat"],
+          weight: 80,
+          createdAt: "2026-06-01T01:00:00.000Z",
           updatedAt: "2026-06-01T01:00:00.000Z"
         },
-        memories: [
-          {
-            id: "m1",
-            kind: "preference",
-            text: "用户喜欢很吵的提醒",
-            tags: ["chat"],
-            weight: 80,
-            createdAt: "2026-06-01T01:00:00.000Z",
-            updatedAt: "2026-06-01T01:00:00.000Z"
-          },
-          {
-            id: "m2",
-            kind: "fact",
-            text: "用户不想记住咖啡",
-            tags: ["chat"],
-            weight: 60,
-            createdAt: "2026-06-01T01:00:00.000Z",
-            updatedAt: "2026-06-01T02:00:00.000Z"
-          }
-        ]
-      }
-    });
-    const updateMemory = vi.fn().mockResolvedValue({
-      ok: true,
-      data: {
-        id: "m1",
-        kind: "preference",
-        text: "用户喜欢安静温柔的提醒",
-        tags: ["chat"],
-        weight: 80,
-        createdAt: "2026-06-01T01:00:00.000Z",
-        updatedAt: "2026-06-01T06:00:00.000Z"
-      }
-    });
+        {
+          id: "m2",
+          kind: "fact",
+          text: "用户不想记住咖啡",
+          tags: ["chat"],
+          weight: 60,
+          createdAt: "2026-06-01T01:00:00.000Z",
+          updatedAt: "2026-06-01T02:00:00.000Z"
+        }
+      ],
+      blockRules: [],
+      chatHistory: [],
+      counts: { memories: 2, blockRules: 0, chatHistoryTurns: 0 }
+    };
+    const afterUpdateOverview = {
+      ...initialOverview,
+      memories: [
+        { ...initialOverview.memories[0], text: "用户喜欢安静温柔的提醒", updatedAt: "2026-06-01T06:00:00.000Z" },
+        initialOverview.memories[1]
+      ]
+    };
+    const afterBlockOverview = {
+      ...afterUpdateOverview,
+      memories: [afterUpdateOverview.memories[0]],
+      counts: { memories: 1, blockRules: 1, chatHistoryTurns: 0 }
+    };
+    const getPrivacyOverview = vi.fn()
+      .mockResolvedValueOnce({ ok: true, data: initialOverview })
+      .mockResolvedValueOnce({ ok: true, data: afterUpdateOverview })
+      .mockResolvedValueOnce({ ok: true, data: afterBlockOverview });
+    const updateMemory = vi.fn().mockResolvedValue({ ok: true, data: afterUpdateOverview.memories[0] });
     const blockMemory = vi.fn().mockResolvedValue({ ok: true, data: { blockedCount: 1 } });
     window.confirm = vi.fn().mockReturnValue(true);
     (window as any).clinePet = {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
-      getMemoryOverview,
+      getPrivacyOverview,
       updateMemory,
       blockMemory
     };
@@ -353,7 +393,7 @@ describe("renderer App", () => {
     });
 
     expect(updateMemory).toHaveBeenCalledWith("m1", "用户喜欢安静温柔的提醒");
-    expect(document.querySelector(".memory-panel")?.textContent).toContain("用户喜欢安静温柔的提醒");
+    expect(document.querySelector(".privacy-panel")?.textContent).toContain("用户喜欢安静温柔的提醒");
     expect(document.querySelector(".speech-bubble")?.textContent).toContain("我记住修正啦");
 
     await act(async () => {
@@ -362,8 +402,92 @@ describe("renderer App", () => {
     });
 
     expect(blockMemory).toHaveBeenCalledWith("m2");
-    expect(document.querySelector(".memory-panel")?.textContent).not.toContain("用户不想记住咖啡");
+    expect(document.querySelector(".privacy-panel")?.textContent).not.toContain("用户不想记住咖啡");
     expect(document.querySelector(".speech-bubble")?.textContent).toContain("好，我以后不会再记类似内容");
+  });
+
+  it("manages blocklist rules and unified privacy export from the privacy panel", async () => {
+    const getPrivacyOverview = vi.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        relationship: {
+          stage: "familiar",
+          stageLabel: "熟悉",
+          stageDescription: "卡卡已经记得一些与你相处的节奏。",
+          familiarity: 30,
+          affection: 30,
+          engagement: 30,
+          trust: 30,
+          updatedAt: "2026-06-01T01:00:00.000Z"
+        },
+        memories: [],
+        blockRules: [{
+          id: "rule-1",
+          text: "不要记住咖啡",
+          kind: "preference",
+          sourceMemoryId: "old-memory",
+          createdAt: "2026-06-01T02:00:00.000Z"
+        }],
+        chatHistory: [],
+        counts: { memories: 0, blockRules: 1, chatHistoryTurns: 0 }
+      }
+    });
+    const deleteMemoryBlockRule = vi.fn().mockResolvedValue({ ok: true });
+    const clearMemoryBlockRules = vi.fn().mockResolvedValue({ ok: true });
+    const exportPrivacyData = vi.fn().mockResolvedValue({ ok: true, data: "{\n  \"counts\": {\n    \"blockRules\": 1\n  }\n}" });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    window.confirm = vi.fn().mockReturnValue(true);
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
+      getPrivacyOverview,
+      deleteMemoryBlockRule,
+      clearMemoryBlockRules,
+      exportPrivacyData
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+    await act(async () => {
+      (document.querySelector(".memory-trigger") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      (document.querySelector('[data-privacy-tab="blocklist"]') as HTMLButtonElement).click();
+    });
+
+    expect(document.querySelector(".privacy-blocklist-section")?.textContent).toContain("不要记住咖啡");
+
+    await act(async () => {
+      (document.querySelector('[data-block-rule-delete="rule-1"]') as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    expect(deleteMemoryBlockRule).toHaveBeenCalledWith("rule-1");
+
+    await act(async () => {
+      (document.querySelector(".block-rules-clear") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    expect(clearMemoryBlockRules).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      (document.querySelector('[data-privacy-tab="export"]') as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      (document.querySelector(".privacy-export-copy") as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+    expect(exportPrivacyData).toHaveBeenCalledOnce();
+    expect(writeText).toHaveBeenCalledWith("{\n  \"counts\": {\n    \"blockRules\": 1\n  }\n}");
   });
 
   it("reports reading activity while a long chat bubble is open in readable mode", async () => {
