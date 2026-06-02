@@ -1,4 +1,4 @@
-import { createServer } from "node:http";
+﻿import { createServer } from "node:http";
 import { afterEach, describe, expect, it } from "vitest";
 import { sendStatusToBridge } from "../../src/bridge/bridgeClient";
 
@@ -14,9 +14,14 @@ async function listen(serverToStart: ReturnType<typeof createServer>) {
 }
 
 describe("bridge client", () => {
-  it("sends status to a local bridge", async () => {
-    server = createServer((req, res) => {
+  it("sends normalized status to a local bridge", async () => {
+    server = createServer(async (req, res) => {
       expect(req.url).toBe("/status");
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(Buffer.from(chunk));
+      const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+      expect(body.status).toBe("loading");
+      expect(body.normalizedFrom).toBe("working");
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ ok: true }));
     });
@@ -27,7 +32,7 @@ describe("bridge client", () => {
   });
 
   it("returns PET_APP_UNREACHABLE for closed port", async () => {
-    const result = await sendStatusToBridge({ port: 9, timeoutMs: 100 }, { status: "working", task: "test" });
+    const result = await sendStatusToBridge({ port: 9, timeoutMs: 100 }, { status: "loading", task: "test" });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errorCode).toBe("PET_APP_UNREACHABLE");
   });
