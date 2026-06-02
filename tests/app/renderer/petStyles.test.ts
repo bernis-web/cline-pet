@@ -36,4 +36,20 @@ describe("pet renderer styles", () => {
     expect(styles).toContain(".memory-editor");
     expect(styles).toContain(".memory-editor-actions");
   });
+
+  it("includes unified privacy panel styles for tabs, blocklist, history, and export actions", () => {
+    expect(styles).toContain(".privacy-panel");
+    expect(styles).toContain(".privacy-tabs");
+    expect(styles).toContain(".privacy-tab-active");
+    expect(styles).toContain(".privacy-body");
+    expect(styles).toContain(".privacy-data-list");
+    expect(styles).toContain(".privacy-blocklist-section");
+    expect(styles).toContain(".block-rule-list");
+    expect(styles).toContain(".block-rules-clear");
+    expect(styles).toContain(".privacy-history-section");
+    expect(styles).toContain(".chat-history-copy");
+    expect(styles).toContain(".privacy-export-section");
+    expect(styles).toContain(".privacy-export-copy");
+    expect(styles).toContain(".privacy-clear-actions");
+  });
 });

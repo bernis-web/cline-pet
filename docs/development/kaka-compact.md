@@ -11,16 +11,16 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Worktree: `d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-local-pet-pack`
 - Do not work from workspace root; it is not the repo.
 
-## Latest important commit
+## Latest important commits
 
+- `7162376 feat: integrate unified privacy panel`
+- `f54379e feat: add unified privacy panel`
+- `dcf9f4f feat: expose privacy panel bridge`
+- `8ac9ed9 feat: add privacy management service`
+- `e37621b feat: add memory blocklist management helpers`
+- `8fca198 docs: add Kaka privacy panel plan`
+- `50c7395 docs: add Kaka privacy panel design`
 - `a89a3f4 feat: integrate memory correction flows`
-- `3e23087 feat: add memory correction controls`
-- `27eb91d feat: expose memory correction bridge`
-- `3e32359 feat: filter blocked memory extraction`
-- `2366fd7 feat: add memory correction service`
-- `b885919 feat: add memory blocklist store`
-- `cda5c83 docs: add Kaka memory correction plan`
-- `7840638 docs: add Kaka memory correction design`
 
 ## What is already built
 
@@ -36,6 +36,9 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Renderer supports bubbles, auto-hide, readable long chat bubbles, chat history panel, drag, double-click chat, right-click settings, long-press head-pat.
 - Cyber Life v2.1 memory controls: `记忆` panel for viewing/searching/filtering/deleting/clearing/exporting long-term memories from `context-memory.jsonl`.
 - Cyber Life v2.2 memory correction: users can edit long-term memory text and mark a memory as `不要再记`; blocked/similar future extraction candidates are filtered before writing `context-memory.jsonl`.
+- Cyber Life v2.3 unified privacy panel: `记忆` and `历史` triggers both open `PrivacyPanel`; tabs cover long-term memories, `不要再记` blocklist, chat history, and export/clear actions.
+- Privacy overview/export IPC reads only Kaka local data: `relationship.json`, `context-memory.jsonl`, `memory-blocklist.json`, and `chat-history.jsonl`.
+- Blocklist management now supports deleting one rule and clearing all `不要再记` rules without restoring previously deleted memories.
 - Relationship overview: `初识` / `熟悉` / `亲近` / `信赖` derived from familiarity, affection, engagement, and trust scores in `relationship.json`.
 - Presence runtime now receives readable long-chat activity from the renderer and treats continuous `loading` / `thinking` over 90 minutes as a long-work care opportunity.
 
@@ -58,9 +61,12 @@ src/app/main/interaction/headPatService.ts
 src/app/main/memory/*
 src/app/main/memory/memoryBlocklistStore.ts
 src/app/main/memory/memoryManagementService.ts
+src/app/main/memory/privacyManagementService.ts
 src/app/renderer/App.tsx
 src/app/renderer/PetView.tsx
 src/app/renderer/MemoryPanel.tsx
+src/app/renderer/PrivacyPanel.tsx
+src/app/renderer/privacyTypes.ts
 src/app/renderer/bubbleTypes.ts
 src/app/renderer/petStyles.css
 ```
@@ -82,6 +88,14 @@ Expected verification as of 2026-06-01:
 Test Files 38 passed
 Tests 135 passed
 Build renderer/main/preload passed
+```
+
+Privacy panel focused verification as of 2026-06-02:
+
+```text
+npm test -- tests/app/renderer/App.test.ts tests/app/renderer/PrivacyPanel.test.ts tests/app/renderer/petBridge.test.ts
+Test Files 3 passed
+Tests 31 passed
 ```
 
 ## MCP status update debug
@@ -120,8 +134,8 @@ If these work but Cline tool calls do not, rerun integration and reload VS Code/
 
 ## Likely next tasks
 
-1. Add blocklist management UI for reviewing or removing `不要再记` rules.
-2. Add history-level `不要再记` actions from chat/history UI.
-3. Consider richer relationship/profile UI with recent positive events.
-4. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
-5. Explore richer proactive rhythms after memory correction proves stable.
+1. Add history-level `不要再记` actions from chat/history UI.
+2. Consider richer relationship/profile UI with recent positive events.
+3. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
+4. Explore richer proactive rhythms after privacy controls prove stable.
+5. Consider migrating old standalone `MemoryPanel` / `ChatHistoryPanel` tests after the unified privacy panel fully replaces them in UX.

@@ -390,6 +390,171 @@ body,
   font-size: 10px;
 }
 
+.privacy-panel {
+  position: absolute;
+  inset: 10px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  color: #e5e7eb;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.97), rgba(30, 41, 59, 0.96));
+  border: 1px solid rgba(147, 197, 253, 0.18);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.34);
+  font-size: 12px;
+  -webkit-app-region: no-drag;
+}
+
+.privacy-panel header,
+.privacy-tabs,
+.privacy-clear-actions,
+.block-rule-list li,
+.privacy-data-card > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.privacy-panel header button,
+.privacy-panel input,
+.privacy-panel select,
+.privacy-panel button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 9px;
+}
+
+.privacy-panel button {
+  cursor: pointer;
+}
+
+.privacy-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.privacy-panel input,
+.privacy-panel select {
+  min-width: 0;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.94);
+  outline: 0;
+}
+
+.privacy-tabs {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.privacy-tab {
+  color: #dbeafe;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(147, 197, 253, 0.2) !important;
+  font-size: 11px;
+}
+
+.privacy-tab-active {
+  color: #0f172a;
+  background: #bfdbfe;
+}
+
+.privacy-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.privacy-memory-section,
+.privacy-blocklist-section,
+.privacy-history-section,
+.privacy-export-section {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.privacy-memory-section .memory-controls,
+.privacy-history-section input {
+  flex-shrink: 0;
+}
+
+.privacy-data-list,
+.block-rule-list {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.privacy-data-card,
+.block-rule-list li {
+  padding: 8px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.privacy-data-card p,
+.privacy-export-section p,
+.privacy-note {
+  margin: 5px 0;
+}
+
+.privacy-data-card time,
+.privacy-data-card small,
+.block-rule-list small,
+.privacy-empty,
+.privacy-note {
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+.block-rule-list li {
+  align-items: flex-start;
+}
+
+.block-rule-list li > div {
+  display: grid;
+  gap: 4px;
+}
+
+.block-rule-list strong {
+  overflow-wrap: anywhere;
+}
+
+.block-rules-clear,
+.privacy-clear-memories,
+.privacy-clear-block-rules,
+.privacy-clear-history,
+.chat-history-clear {
+  color: #111827;
+  background: #fbbf24;
+}
+
+.privacy-export-copy,
+.chat-history-copy {
+  color: #0f172a;
+  background: #93c5fd;
+}
+
+.privacy-export-section {
+  padding: 8px;
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.72);
+}
+
+.privacy-clear-actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
 .chat-history-panel {
   position: absolute;
   inset: 12px;
