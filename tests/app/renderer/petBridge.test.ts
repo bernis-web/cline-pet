@@ -2,6 +2,25 @@ import { describe, expect, it, vi } from "vitest";
 import { createRendererPetBridge } from "../../../src/app/renderer/petBridge";
 
 describe("renderer pet bridge", () => {
+  it("subscribes to privacy-open and diagnostics-show events from the main process", () => {
+    const on = vi.fn();
+    const bridge = createRendererPetBridge({ on, invoke: vi.fn() } as any);
+
+    expect(typeof (bridge as any).onPrivacyOpen).toBe("function");
+    expect(typeof (bridge as any).onDiagnostics).toBe("function");
+
+    if (typeof (bridge as any).onPrivacyOpen === "function") {
+      (bridge as any).onPrivacyOpen(vi.fn());
+    }
+
+    if (typeof (bridge as any).onDiagnostics === "function") {
+      (bridge as any).onDiagnostics(vi.fn());
+    }
+
+    expect(on).toHaveBeenNthCalledWith(1, "privacy:open", expect.any(Function));
+    expect(on).toHaveBeenNthCalledWith(2, "diagnostics:show", expect.any(Function));
+  });
+
   it("reports effective head-pat interactions through IPC", async () => {
     const invoke = vi.fn().mockResolvedValue({ ok: true });
     const bridge = createRendererPetBridge({ on: vi.fn(), invoke } as any);

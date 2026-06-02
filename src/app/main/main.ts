@@ -38,6 +38,9 @@ import { maybeCreatePresencePulse } from "./presenceService.js";
 import { applyPresenceActivityInput, hasLongWorkSession, updateWorkSession, type PresenceRuntimeState } from "./presenceRuntime.js";
 import { createTray, openPath } from "./tray.js";
 
+type PrivacyOpenPayload = { tab: "memories" | "blocklist" | "history" | "export" };
+type DiagnosticsShowPayload = { text: string };
+
 const bridgePort = Number(process.env.CLINE_PET_BRIDGE_PORT ?? "37621");
 let latestStatus: UpdatePetStatusInput = {
   status: "idle",
@@ -287,6 +290,15 @@ app.whenReady().then(async () => {
   createTray({
     window: win,
     runDiagnostics: async () => formatDebugReport(diagnostics()),
+    showDiagnostics: async () => {
+      showPetWindow(win);
+      const text = await formatDebugReport(diagnostics());
+      win.webContents.send("diagnostics:show", { text } satisfies DiagnosticsShowPayload);
+    },
+    openPrivacyTab: (tab) => {
+      showPetWindow(win);
+      win.webContents.send("privacy:open", { tab } satisfies PrivacyOpenPayload);
+    },
     openLogs: () => openPath(paths.logs),
     openPetPacksFolder: () => openPath(paths.petPacks),
     refreshPetPacks: () => { packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)]; selectedPetPackId = chooseInitialPetPackId(selectedPetPackId === DEFAULT_PET_PACK_ID ? null : selectedPetPackId, packs.map((pack) => pack.manifest.id)); sendSelectedPack(); },

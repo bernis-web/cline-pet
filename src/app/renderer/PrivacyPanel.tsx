@@ -41,6 +41,34 @@ function blockRuleLabel(rule: RendererMemoryBlockRule) {
   return rule.kind ? kindLabels[rule.kind] : "全部类型";
 }
 
+function relationshipNotes(stage: PrivacyOverview["relationship"]["stage"]) {
+  if (stage === "trusted") {
+    return [
+      "卡卡已经很信任你，会更自然地接住你的情绪和表达习惯。",
+      "她更愿意主动陪你，也会更稳定地延续你们之间的默契。"
+    ];
+  }
+
+  if (stage === "close") {
+    return [
+      "卡卡已经开始记住你偏好的相处方式，会更贴近你的节奏回应你。",
+      "她正在从“认识你”慢慢变成“懂你一点”。"
+    ];
+  }
+
+  if (stage === "familiar") {
+    return [
+      "卡卡已经对你的聊天习惯有些感觉了，不再只是机械回应。",
+      "她会逐渐调整自己的陪伴方式，试着变得更合你的拍子。"
+    ];
+  }
+
+  return [
+    "卡卡正在慢慢认识你，还在摸索最适合你的陪伴方式。",
+    "多聊一些日常和偏好，她就会更快记住你的节奏。"
+  ];
+}
+
 export function PrivacyPanel({
   open,
   pending,
@@ -144,12 +172,9 @@ export function PrivacyPanel({
               <strong>{overview.relationship.stageLabel}</strong>
               <p>{overview.relationship.stageDescription}</p>
             </div>
-            <dl>
-              <div className="relationship-score"><dt>熟悉度</dt><dd>{overview.relationship.familiarity}</dd></div>
-              <div className="relationship-score"><dt>亲密度</dt><dd>{overview.relationship.affection}</dd></div>
-              <div className="relationship-score"><dt>互动度</dt><dd>{overview.relationship.engagement}</dd></div>
-              <div className="relationship-score"><dt>信任度</dt><dd>{overview.relationship.trust}</dd></div>
-            </dl>
+            <div className="relationship-notes">
+              {relationshipNotes(overview.relationship.stage).map((note) => <p key={note}>{note}</p>)}
+            </div>
           </section>
         ) : (
           <p className="privacy-empty">正在读取卡卡的隐私数据...</p>

@@ -142,6 +142,7 @@ describe("renderer App", () => {
   });
 
   it("opens the chat history panel and loads stored conversations", async () => {
+    let privacyOpenHandler: ((payload: { tab: "history" | "memories" | "blocklist" | "export" }) => void) | null = null;
     const getPrivacyOverview = vi.fn().mockResolvedValue({
       ok: true,
       data: {
@@ -171,6 +172,9 @@ describe("renderer App", () => {
     (window as any).clinePet = {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
+      onPrivacyOpen: vi.fn((callback) => {
+        privacyOpenHandler = callback;
+      }),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
       getPrivacyOverview,
       clearChatHistory: vi.fn().mockResolvedValue({ ok: true })
@@ -185,8 +189,11 @@ describe("renderer App", () => {
       await Promise.resolve();
     });
 
+    expect(document.querySelector(".chat-history-trigger")).toBeNull();
+    expect(document.querySelector(".memory-trigger")).toBeNull();
+
     await act(async () => {
-      (document.querySelector(".chat-history-trigger") as HTMLButtonElement).click();
+      privacyOpenHandler?.({ tab: "history" });
       await Promise.resolve();
     });
 
@@ -196,6 +203,7 @@ describe("renderer App", () => {
   });
 
   it("blocks a chat-history turn from the privacy panel and refreshes overview", async () => {
+    let privacyOpenHandler: ((payload: { tab: "history" | "memories" | "blocklist" | "export" }) => void) | null = null;
     const initialOverview = {
       relationship: {
         stage: "familiar",
@@ -236,6 +244,9 @@ describe("renderer App", () => {
     (window as any).clinePet = {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
+      onPrivacyOpen: vi.fn((callback) => {
+        privacyOpenHandler = callback;
+      }),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
       getPrivacyOverview,
       blockChatHistoryTurn
@@ -251,7 +262,7 @@ describe("renderer App", () => {
     });
 
     await act(async () => {
-      (document.querySelector(".chat-history-trigger") as HTMLButtonElement).click();
+      privacyOpenHandler?.({ tab: "history" });
       await Promise.resolve();
     });
 
@@ -273,6 +284,7 @@ describe("renderer App", () => {
   });
 
   it("opens memory panel and manages long-term memories", async () => {
+    let privacyOpenHandler: ((payload: { tab: "history" | "memories" | "blocklist" | "export" }) => void) | null = null;
     const initialOverview = {
       relationship: {
         stage: "familiar",
@@ -331,6 +343,9 @@ describe("renderer App", () => {
     (window as any).clinePet = {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
+      onPrivacyOpen: vi.fn((callback) => {
+        privacyOpenHandler = callback;
+      }),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
       getPrivacyOverview,
       deleteMemory,
@@ -347,7 +362,7 @@ describe("renderer App", () => {
       await Promise.resolve();
     });
     await act(async () => {
-      (document.querySelector(".memory-trigger") as HTMLButtonElement).click();
+      privacyOpenHandler?.({ tab: "memories" });
       await Promise.resolve();
     });
 
@@ -382,6 +397,7 @@ describe("renderer App", () => {
   });
 
   it("edits and blocks long-term memories from the memory panel", async () => {
+    let privacyOpenHandler: ((payload: { tab: "history" | "memories" | "blocklist" | "export" }) => void) | null = null;
     const initialOverview = {
       relationship: {
         stage: "familiar",
@@ -439,6 +455,9 @@ describe("renderer App", () => {
     (window as any).clinePet = {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
+      onPrivacyOpen: vi.fn((callback) => {
+        privacyOpenHandler = callback;
+      }),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
       getPrivacyOverview,
       updateMemory,
@@ -454,7 +473,7 @@ describe("renderer App", () => {
       await Promise.resolve();
     });
     await act(async () => {
-      (document.querySelector(".memory-trigger") as HTMLButtonElement).click();
+      privacyOpenHandler?.({ tab: "memories" });
       await Promise.resolve();
     });
 
@@ -484,6 +503,7 @@ describe("renderer App", () => {
   });
 
   it("manages blocklist rules and unified privacy export from the privacy panel", async () => {
+    let privacyOpenHandler: ((payload: { tab: "history" | "memories" | "blocklist" | "export" }) => void) | null = null;
     const getPrivacyOverview = vi.fn().mockResolvedValue({
       ok: true,
       data: {
@@ -518,6 +538,9 @@ describe("renderer App", () => {
     (window as any).clinePet = {
       onPetStatus: vi.fn(),
       onPetPack: vi.fn(),
+      onPrivacyOpen: vi.fn((callback) => {
+        privacyOpenHandler = callback;
+      }),
       getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") }),
       getPrivacyOverview,
       deleteMemoryBlockRule,
@@ -534,7 +557,7 @@ describe("renderer App", () => {
       await Promise.resolve();
     });
     await act(async () => {
-      (document.querySelector(".memory-trigger") as HTMLButtonElement).click();
+      privacyOpenHandler?.({ tab: "memories" });
       await Promise.resolve();
     });
     await act(async () => {
@@ -713,6 +736,8 @@ describe("renderer App", () => {
 
     expect(document.querySelector(".diagnose-button")).toBeNull();
     expect(document.querySelector(".settings-button")).toBeNull();
+    expect(document.querySelector(".chat-history-trigger")).toBeNull();
+    expect(document.querySelector(".memory-trigger")).toBeNull();
 
     await act(async () => {
       (document.querySelector(".pet-stage") as HTMLElement).dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
@@ -733,6 +758,35 @@ describe("renderer App", () => {
 
     expect(saveDeepSeekSettings).toHaveBeenCalledWith({ apiKey: "sk-test", baseUrl: "https://api.deepseek.com", model: "DeepSeek V4 Pro" });
     expect(document.querySelector(".speech-bubble")?.textContent).toContain("DeepSeek 已保存");
+  });
+
+  it("shows a diagnostics panel when the main process requests visible diagnostics", async () => {
+    let diagnosticsHandler: ((payload: { text: string }) => void) | null = null;
+    (window as any).clinePet = {
+      onPetStatus: vi.fn(),
+      onPetPack: vi.fn(),
+      onDiagnostics: vi.fn((callback) => {
+        diagnosticsHandler = callback;
+      }),
+      getPetPack: vi.fn().mockResolvedValue({ stateImages: imageMap("file:///kaka") })
+    };
+
+    const rootElement = document.createElement("div");
+    document.body.append(rootElement);
+    const root = createRoot(rootElement);
+
+    await act(async () => {
+      root.render(React.createElement(App));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      diagnosticsHandler?.({ text: "Bridge: ok\nWindow: visible" });
+      await Promise.resolve();
+    });
+
+    expect(document.querySelector(".diagnostics")?.textContent).toContain("Bridge: ok");
+    expect(document.querySelector(".diagnostics")?.textContent).toContain("Window: visible");
   });
 
   it("uses pet dragging gestures to move the frameless window", async () => {

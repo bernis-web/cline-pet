@@ -88,6 +88,18 @@ describe("PrivacyPanel", () => {
     expect(rootElement.querySelector('[data-privacy-tab="export"]')?.textContent).toContain("导出/清除");
   });
 
+  it("shows relationship stage copy without exposing raw score labels", () => {
+    const { rootElement } = renderPanel();
+
+    const relationshipCard = rootElement.querySelector(".relationship-card");
+    expect(relationshipCard?.textContent).toContain("亲近");
+    expect(relationshipCard?.textContent).toContain("卡卡和你更亲近了");
+    expect(relationshipCard?.textContent).not.toContain("熟悉度");
+    expect(relationshipCard?.textContent).not.toContain("亲密度");
+    expect(relationshipCard?.textContent).not.toContain("互动度");
+    expect(relationshipCard?.textContent).not.toContain("信任度");
+  });
+
   it("opens on the requested initial tab", () => {
     const { rootElement } = renderPanel("history");
 

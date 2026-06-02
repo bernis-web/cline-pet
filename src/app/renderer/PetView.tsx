@@ -25,8 +25,6 @@ export type PetViewProps = {
   bubble: BubbleMessage | null;
   chatOpen: boolean;
   chatPending: boolean;
-  onOpenHistory(): void;
-  onOpenMemory(): void;
   onOpenSettings(): void;
   onHeadPatStart(): void;
   onHeadPatEnd(input: HeadPatInteractionInput): void;
@@ -40,7 +38,7 @@ export type PetViewProps = {
   onChatCancel(): void;
 };
 
-export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpenHistory, onOpenMemory, onOpenSettings, onHeadPatStart, onHeadPatEnd, onHeadPatCancel, onDragStart, onStartChat, onOpenReadableBubble, onCloseBubble, onMoveWindowBy, onChatSubmit, onChatCancel }: PetViewProps) {
+export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpenSettings, onHeadPatStart, onHeadPatEnd, onHeadPatCancel, onDragStart, onStartChat, onOpenReadableBubble, onCloseBubble, onMoveWindowBy, onChatSubmit, onChatCancel }: PetViewProps) {
   const pointer = useRef<PointerState | null>(null);
 
   function distanceFromStart(state: { startX: number; startY: number }, event: MouseEvent | ReactMouseEvent) {
@@ -148,8 +146,6 @@ export function PetView({ status, imageSrc, bubble, chatOpen, chatPending, onOpe
   return (
     <main className="pet-shell">
       <SpeechBubble message={bubble} onOpenReadable={onOpenReadableBubble} onClose={onCloseBubble} />
-      <button className="chat-history-trigger" type="button" onClick={onOpenHistory} title="查看对话历史">历史</button>
-      <button className="memory-trigger" type="button" onClick={onOpenMemory} title="查看长期记忆">记忆</button>
       <section className="pet-stage" onMouseDown={startPointerInteraction} onDoubleClick={onStartChat} onContextMenu={openSettings} title="拖动移动，长按轻摸，双击聊天，右键设置">
         <img className={`pet-image pet-motion-${status}`} src={imageSrc} alt={toStatusLabel(status)} draggable={false} />
       </section>

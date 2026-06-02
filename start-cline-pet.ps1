@@ -1,4 +1,22 @@
+param(
+  [switch]$HiddenLaunch
+)
+
 $ErrorActionPreference = 'Stop'
+
+if (-not $HiddenLaunch -and $env:CLINE_PET_HIDDEN_LAUNCH -ne '1') {
+  $scriptPath = Join-Path $PSScriptRoot 'start-cline-pet.ps1'
+  $hiddenCommand = "& { `$env:CLINE_PET_HIDDEN_LAUNCH = '1'; & '$scriptPath' -HiddenLaunch }"
+  Start-Process -FilePath 'powershell.exe' -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -ArgumentList @(
+    '-NoProfile',
+    '-ExecutionPolicy', 'Bypass',
+    '-WindowStyle', 'Hidden',
+    '-Command', $hiddenCommand
+  )
+  exit 0
+}
+
+$env:CLINE_PET_HIDDEN_LAUNCH = '1'
 
 Set-Location -Path $PSScriptRoot
 $env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'

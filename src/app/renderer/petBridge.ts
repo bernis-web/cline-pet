@@ -8,6 +8,14 @@ export type RendererPetPack = {
   variants?: Partial<Record<PetStatus, string[]>>;
 };
 
+export type RendererPrivacyOpenPayload = {
+  tab: "memories" | "blocklist" | "history" | "export";
+};
+
+export type RendererDiagnosticsPayload = {
+  text: string;
+};
+
 export type ChatResponse =
   | { ok: true; text: string }
   | { ok: false; errorCode: string; message: string };
@@ -150,6 +158,8 @@ export type IpcLike = {
   on(channel: "pet-status", callback: (event: unknown, payload: UpdatePetStatusInput) => void): void;
   on(channel: "pet-pack", callback: (event: unknown, payload: RendererPetPack) => void): void;
   on(channel: "chat:response", callback: (event: unknown, payload: ChatResponse) => void): void;
+  on(channel: "privacy:open", callback: (event: unknown, payload: RendererPrivacyOpenPayload) => void): void;
+  on(channel: "diagnostics:show", callback: (event: unknown, payload: RendererDiagnosticsPayload) => void): void;
   invoke(channel: "get-pet-pack"): Promise<RendererPetPack>;
   invoke(channel: "chat:send", payload: { text: string }): Promise<ChatResponse>;
   invoke(channel: "chat:get-history"): Promise<ChatHistoryResponse>;
@@ -179,6 +189,12 @@ export function createRendererPetBridge(ipc: IpcLike) {
     },
     onPetPack(callback: (payload: RendererPetPack) => void) {
       ipc.on("pet-pack", (_event, payload) => callback(payload));
+    },
+    onPrivacyOpen(callback: (payload: RendererPrivacyOpenPayload) => void) {
+      ipc.on("privacy:open", (_event, payload) => callback(payload));
+    },
+    onDiagnostics(callback: (payload: RendererDiagnosticsPayload) => void) {
+      ipc.on("diagnostics:show", (_event, payload) => callback(payload));
     },
     getPetPack() {
       return ipc.invoke("get-pet-pack");

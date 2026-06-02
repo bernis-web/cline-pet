@@ -9,6 +9,7 @@ describe("pet renderer styles", () => {
     expect(styles).toContain(".speech-bubble");
     expect(styles).not.toContain("top: 12px");
     expect(styles).toContain("bottom: 238px");
+    expect(styles).toContain("z-index: 2");
     expect(styles).toContain("max-height: 132px");
     expect(styles).toContain("box-sizing: border-box");
   });
@@ -18,17 +19,17 @@ describe("pet renderer styles", () => {
     expect(styles).toContain("bottom: 12px");
   });
 
-  it("includes history trigger and overlay panel styles", () => {
-    expect(styles).toContain(".chat-history-trigger");
-    expect(styles).toContain("top: 14px");
+  it("removes history and memory triggers from the main surface while keeping overlay panel styles", () => {
+    expect(styles).not.toContain(".chat-history-trigger");
+    expect(styles).not.toContain(".memory-trigger");
     expect(styles).toContain(".chat-history-panel");
     expect(styles).toContain("inset: 12px");
   });
 
-  it("includes memory trigger, relationship overview, memory list, and correction styles", () => {
-    expect(styles).toContain(".memory-trigger");
+  it("includes relationship overview, memory list, and correction styles", () => {
     expect(styles).toContain(".memory-panel");
     expect(styles).toContain(".relationship-card");
+    expect(styles).toContain(".relationship-notes");
     expect(styles).toContain(".memory-list");
     expect(styles).toContain(".memory-delete");
     expect(styles).toContain(".memory-edit");

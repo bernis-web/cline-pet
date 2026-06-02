@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PetStatus } from "../../shared/statuses";
 import { DeepSeekSettingsPanel } from "./DeepSeekSettingsPanel";
+import { DiagnosticsPanel } from "./DiagnosticsPanel";
 import { PetView } from "./PetView";
 import { PrivacyPanel } from "./PrivacyPanel";
 import { bubbleFromChat, bubbleFromNotice, bubbleFromStatus, type BubbleMessage } from "./bubbleTypes";
@@ -19,6 +20,8 @@ declare global {
     clinePet?: {
       onPetStatus(callback: (payload: { status: PetStatus; visibleStatus: PetStatus; baseStatus: PetStatus; overlayStatus: PetStatus | null; task?: string; message?: string; updatedAt?: string; normalizedFrom?: string }) => void): void;
       onPetPack(callback: (payload: RendererPetPack) => void): void;
+      onPrivacyOpen?(callback: (payload: { tab: PrivacyTab }) => void): void;
+      onDiagnostics?(callback: (payload: { text: string }) => void): void;
       getPetPack?(): Promise<RendererPetPack>;
       sendChatMessage?(text: string): Promise<{ ok: true; text: string } | { ok: false; errorCode: string; message: string }>;
       getChatHistory?(): Promise<ChatHistoryResponse>;
@@ -73,6 +76,7 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsPending, setSettingsPending] = useState(false);
   const [deepSeekSettings, setDeepSeekSettings] = useState<DeepSeekSettings | null>(null);
+  const [diagnosticsText, setDiagnosticsText] = useState("");
   const [images, setImages] = useState(defaultImages);
   const [variants, setVariants] = useState<Partial<Record<PetStatus, string[]>>>({});
   const lastPresenceReading = useRef(false);
@@ -165,6 +169,7 @@ export function App() {
   }
 
   async function openPrivacyPanel(tab: PrivacyTab) {
+    setDiagnosticsText("");
     setPrivacyInitialTab(tab);
     setPrivacyOpen(true);
     await refreshPrivacyOverview();
@@ -377,6 +382,14 @@ export function App() {
     });
 
     window.clinePet?.onPetPack((payload) => applyPack(payload));
+    window.clinePet?.onPrivacyOpen?.((payload) => {
+      void openPrivacyPanel(payload.tab);
+    });
+    window.clinePet?.onDiagnostics?.((payload) => {
+      setPrivacyOpen(false);
+      setSettingsOpen(false);
+      setDiagnosticsText(payload.text);
+    });
     window.clinePet?.getPetPack?.().then((payload) => applyPack(payload)).catch(() => undefined);
   }, []);
 
@@ -414,8 +427,6 @@ export function App() {
         chatOpen={chatOpen}
         chatPending={chatPending}
         onStartChat={() => setChatOpen((open) => !open)}
-        onOpenHistory={() => void openPrivacyPanel("history")}
-        onOpenMemory={() => void openPrivacyPanel("memories")}
         onOpenReadableBubble={() => setBubbleState((state) => state.current ? { ...state, current: makeBubbleReadable(state.current) } : state)}
         onCloseBubble={() => setBubbleState((state) => popNextBubble({ current: null, queue: state.queue }))}
         onOpenSettings={openDeepSeekSettings}
@@ -439,6 +450,7 @@ export function App() {
         onChatSubmit={sendChat}
         onChatCancel={() => setChatOpen(false)}
       />
+      <DiagnosticsPanel text={diagnosticsText} onClose={() => setDiagnosticsText("")} />
       <PrivacyPanel
         open={privacyOpen}
         pending={privacyPending}
