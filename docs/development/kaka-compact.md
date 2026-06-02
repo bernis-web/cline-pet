@@ -37,6 +37,7 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Cyber Life v2.1 memory controls: `记忆` panel for viewing/searching/filtering/deleting/clearing/exporting long-term memories from `context-memory.jsonl`.
 - Cyber Life v2.2 memory correction: users can edit long-term memory text and mark a memory as `不要再记`; blocked/similar future extraction candidates are filtered before writing `context-memory.jsonl`.
 - Cyber Life v2.3 unified privacy panel: `记忆` and `历史` triggers both open `PrivacyPanel`; tabs cover long-term memories, `不要再记` blocklist, chat history, and export/clear actions.
+- Cyber Life v2.4 history blocklist: users can mark a chat-history turn as `不要再记`; Kaka stores the user text as a local blocklist rule for future memory extraction without deleting the history turn or existing long-term memories.
 - Privacy overview/export IPC reads only Kaka local data: `relationship.json`, `context-memory.jsonl`, `memory-blocklist.json`, and `chat-history.jsonl`.
 - Blocklist management now supports deleting one rule and clearing all `不要再记` rules without restoring previously deleted memories.
 - Relationship overview: `初识` / `熟悉` / `亲近` / `信赖` derived from familiarity, affection, engagement, and trust scores in `relationship.json`.
@@ -134,8 +135,8 @@ If these work but Cline tool calls do not, rerun integration and reload VS Code/
 
 ## Likely next tasks
 
-1. Add history-level `不要再记` actions from chat/history UI.
+1. Consider optional per-turn history deletion as a separate privacy action.
 2. Consider richer relationship/profile UI with recent positive events.
 3. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
 4. Explore richer proactive rhythms after privacy controls prove stable.
-5. Consider migrating old standalone `MemoryPanel` / `ChatHistoryPanel` tests after the unified privacy panel fully replaces them in UX.
+5. Consider eventually removing old standalone `MemoryPanel` / `ChatHistoryPanel` coverage once unified privacy flows fully own the UX.

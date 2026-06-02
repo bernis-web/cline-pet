@@ -175,6 +175,14 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - `memoryBlocklistStore` 现在支持按规则 id 删除和清空全部规则；撤销“不要再记”只影响 blocklist，不恢复已删除的长期记忆。
 - 清除动作保持分离：清空长期记忆、清空不要再记、清空聊天历史彼此独立。
 
+## Cyber Life v2.4
+
+- 设计文档：`docs/superpowers/specs/2026-06-02-kaka-cyber-life-v2-4-history-blocklist-design.md`。
+- `PrivacyPanel` 的 `聊天历史` 每条记录新增 `不要再记`。
+- 该动作会把 `turn.userText` 写入 `%APPDATA%/cline-desktop-pet/memory-blocklist.json`，用于阻止未来相似长期记忆提炼。
+- 该动作不会删除聊天历史，也不会删除已有长期记忆。
+- IPC 新增 `chat-history:block`，renderer bridge 新增 `blockChatHistoryTurn()`。
+
 ## 资源包
 
 资源包根目录：
