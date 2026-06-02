@@ -36,6 +36,7 @@ import { deriveMoodState } from "./moodEngine.js";
 import { chooseInitialPetPackId, DEFAULT_PET_PACK_ID } from "./petSelection.js";
 import { maybeCreatePresencePulse } from "./presenceService.js";
 import { applyPresenceActivityInput, hasLongWorkSession, updateWorkSession, type PresenceRuntimeState } from "./presenceRuntime.js";
+import { getDefaultPetPackDir, getRendererUrl } from "./runtimePaths.js";
 import { createTray, openPath } from "./tray.js";
 
 type PrivacyOpenPayload = { tab: "memories" | "blocklist" | "history" | "export" };
@@ -58,7 +59,7 @@ function toFileUrl(filePath: string) {
 }
 
 function defaultPack(): PetPack {
-  const dir = join(process.cwd(), "src/assets/default-pet");
+  const dir = getDefaultPetPackDir({ appRoot: app.getAppPath() });
   const legacyDefaultFiles: Record<PetStatus, string> = {
     idle: "idle.svg",
     happy: "done.svg",
@@ -126,7 +127,7 @@ app.whenReady().then(async () => {
   win.on("show", () => writeLog(paths.appLog, "info", "window show", { bounds: win.getBounds() }));
   win.on("hide", () => writeLog(paths.appLog, "info", "window hide", { bounds: win.getBounds() }));
   win.on("closed", () => writeLog(paths.appLog, "info", "window closed"));
-  const rendererUrl = process.env.VITE_DEV_SERVER_URL ?? `file://${join(process.cwd(), "dist/app/renderer/index.html")}`;
+  const rendererUrl = getRendererUrl({ appRoot: app.getAppPath(), devServerUrl: process.env.VITE_DEV_SERVER_URL });
   let packs = [defaultPack(), ...discoverPetPacks(paths.petPacks)];
   let selectedPetPackId = chooseInitialPetPackId(loadSelectedId(paths.stateFile), packs.map((pack) => pack.manifest.id));
   const selectedPack = () => packs.find((pack) => pack.manifest.id === selectedPetPackId) ?? packs[0];

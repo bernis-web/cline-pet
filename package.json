@@ -8,10 +8,12 @@
     "dev": "vite --host 127.0.0.1",
     "dev:electron": "npm run build && electron .",
     "dev:mcp": "tsx src/mcp/server.ts",
-    "build": "npm run build:renderer && npm run build:main && npm run build:preload",
+    "build": "npm run build:renderer && npm run build:main && npm run build:preload && npm run build:assets",
     "build:renderer": "vite build",
     "build:main": "tsc -p tsconfig.node.json",
     "build:preload": "esbuild src/app/main/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/app/main/preload.cjs",
+    "build:assets": "node scripts/copy-default-pet-assets.mjs",
+    "package:win:portable": "npm run build && node scripts/package-windows-portable.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "simulate": "tsx src/simulator/cycleStates.ts"
