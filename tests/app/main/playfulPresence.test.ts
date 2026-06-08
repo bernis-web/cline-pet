@@ -11,25 +11,39 @@ const relationship = {
 };
 
 describe("playfulPresence", () => {
-  it("prefers a happy follow-up after a recent chat window", () => {
+  it("prefers a trusted-stage happy follow-up after a recent chat window", () => {
     expect(decidePlayfulPresence({
       now: "2026-06-01T15:00:00.000Z",
-      relationship: { ...relationship, playfulChatUntil: "2026-06-01T15:15:00.000Z" },
+      relationship: {
+        ...relationship,
+        familiarity: 80,
+        affection: 82,
+        engagement: 78,
+        trust: 80,
+        playfulChatUntil: "2026-06-01T15:15:00.000Z"
+      },
       latestVisibleStatus: "idle"
     })).toEqual({
       status: "happy",
-      message: "刚刚和你聊天我很开心，还想继续陪你。"
+      message: "刚刚和你聊天我很开心，还想继续陪着你。"
     });
   });
 
-  it("prefers a clingy follow-up after a recent head-pat window", () => {
+  it("prefers a close-stage clingy follow-up after a recent head-pat window", () => {
     expect(decidePlayfulPresence({
       now: "2026-06-01T15:00:00.000Z",
-      relationship: { ...relationship, playfulAttachedUntil: "2026-06-01T15:30:00.000Z" },
+      relationship: {
+        ...relationship,
+        familiarity: 56,
+        affection: 58,
+        engagement: 57,
+        trust: 55,
+        playfulAttachedUntil: "2026-06-01T15:30:00.000Z"
+      },
       latestVisibleStatus: "idle"
     })).toEqual({
       status: "message",
-      message: "要不要再摸摸我呀？我会乖一点。"
+      message: "要不要再摸摸我呀？我会更乖一点陪着你。"
     });
   });
 
@@ -44,11 +58,15 @@ describe("playfulPresence", () => {
     });
   });
 
-  it("uses a quiet supportive line after a stressed chat warmth window", () => {
+  it("uses a quiet supportive close-stage line after a stressed chat warmth window", () => {
     expect(decidePlayfulPresence({
       now: "2026-06-01T15:00:00.000Z",
       relationship: {
         ...relationship,
+        familiarity: 55,
+        affection: 58,
+        engagement: 57,
+        trust: 56,
         recentWarmth: {
           source: "chat",
           intensity: "normal",
@@ -59,7 +77,7 @@ describe("playfulPresence", () => {
       latestVisibleStatus: "idle"
     })).toEqual({
       status: "message",
-      message: "如果你还想说，我会安静继续陪你。"
+      message: "如果你还想说，我会继续安静陪着你。"
     });
   });
 
@@ -85,14 +103,21 @@ describe("playfulPresence", () => {
     })).toBeNull();
   });
 
-  it("can emit a low-frequency idle check-in after long inactivity", () => {
+  it("can emit a trusted-stage low-frequency idle check-in after long inactivity", () => {
     expect(decidePlayfulPresence({
       now: "2026-06-01T15:00:00.000Z",
-      relationship: { ...relationship, lastInteractionAt: "2026-06-01T08:00:00.000Z" },
+      relationship: {
+        ...relationship,
+        familiarity: 78,
+        affection: 79,
+        engagement: 77,
+        trust: 80,
+        lastInteractionAt: "2026-06-01T08:00:00.000Z"
+      },
       latestVisibleStatus: "idle"
     })).toEqual({
       status: "message",
-      message: "我在这里等你，想理我了就叫我。"
+      message: "我在这边等你，想叫我的时候我就在。"
     });
   });
 });

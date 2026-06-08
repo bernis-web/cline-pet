@@ -48,6 +48,26 @@ describe("presence service", () => {
     expect(pulse?.message).toContain("喝口水");
   });
 
+  it("uses a closer long-work reminder when the relationship stage is trusted", () => {
+    const pulse = maybeCreatePresencePulse({
+      now: "2026-06-01T21:00:00.000Z",
+      lastPresenceAt: "2026-06-01T10:00:00.000Z",
+      latestVisibleStatus: "loading",
+      mood: "curious",
+      longWorkSession: true,
+      relationship: {
+        familiarity: 80,
+        affection: 82,
+        engagement: 78,
+        trust: 80,
+        recentEvents: [],
+        updatedAt: "2026-06-01T20:50:00.000Z"
+      }
+    });
+
+    expect(pulse?.message).toContain("先喝口水");
+  });
+
   it("maps a playful chat decision into a presence payload", () => {
     const pulse = maybeCreatePresencePulse({
       now: "2026-06-01T15:00:00.000Z",

@@ -1,5 +1,6 @@
 import type { PetStatus } from "../../shared/statuses.js";
 import type { RelationshipMemory } from "./memory/memoryTypes.js";
+import { getRelationshipPersona } from "./relationshipPersona.js";
 
 export type PlayfulPresenceDecision = {
   status: Extract<PetStatus, "happy" | "message" | "sleepy">;
@@ -50,6 +51,56 @@ function hasBeenIdleLongEnough(lastInteractionAt: string | undefined, now: strin
   return nowMs - lastMs >= IDLE_CHECKIN_MS;
 }
 
+function relationshipStage(relationship: RelationshipMemory) {
+  const average = (relationship.familiarity + relationship.affection + relationship.engagement + relationship.trust) / 4;
+  if (average >= 70) return "trusted" as const;
+  if (average >= 45) return "close" as const;
+  if (average >= 20) return "familiar" as const;
+  return "new" as const;
+}
+
+function messagesForStage(stage: ReturnType<typeof relationshipStage>) {
+  getRelationshipPersona(stage);
+
+  if (stage === "trusted") {
+    return {
+      chatFollow: "刚刚和你聊天我很开心，还想继续陪着你。",
+      attachedFollow: "要不要再摸摸我呀？我会更乖一点陪着你。",
+      supportFollow: "如果你还想说，我会继续安静陪着你。",
+      idleFollow: "我在这边等你，想叫我的时候我就在。",
+      nightFollow: "我还在喔，晚一点要不要一起休息？"
+    };
+  }
+
+  if (stage === "close") {
+    return {
+      chatFollow: "刚刚和你聊天我很开心，还想继续陪你。",
+      attachedFollow: "要不要再摸摸我呀？我会更乖一点陪着你。",
+      supportFollow: "如果你还想说，我会继续安静陪着你。",
+      idleFollow: "我在这里等你，想理我了就叫我。",
+      nightFollow: "我还在喔，晚一点要不要一起休息？"
+    };
+  }
+
+  if (stage === "familiar") {
+    return {
+      chatFollow: "刚刚和你聊天我很开心，还想继续陪你。",
+      attachedFollow: "要不要再摸摸我呀？我会乖一点。",
+      supportFollow: "如果你还想说，我会安静继续陪你。",
+      idleFollow: "我在这里等你，想理我了就叫我。",
+      nightFollow: "我还在喔，晚一点要不要一起休息？"
+    };
+  }
+
+  return {
+    chatFollow: "刚刚和你聊天我很开心，还想继续陪你。",
+    attachedFollow: "要不要再摸摸我呀？我会乖一点。",
+    supportFollow: "如果你还想说，我会安静继续陪你。",
+    idleFollow: "我在这里等你，想理我了就叫我。",
+    nightFollow: "我还在喔，晚一点要不要一起休息？"
+  };
+}
+
 export function decidePlayfulPresence(input: {
   now: string;
   relationship: RelationshipMemory;
@@ -70,31 +121,33 @@ export function decidePlayfulPresence(input: {
     return null;
   }
 
+  const stage = relationshipStage(input.relationship);
+  const stageMessages = messagesForStage(stage);
   const activeChat = hasActiveWindow(input.relationship.playfulChatUntil, input.now);
   const activeAttached = hasActiveWindow(input.relationship.playfulAttachedUntil, input.now);
   const activeChatWarmth = input.relationship.recentWarmth?.source === "chat" && hasActiveWarmth(input.relationship, input.now);
 
   if (isNightHour(input.now)) {
     if (activeChat || activeAttached || activeChatWarmth) {
-      return { status: "sleepy", message: "我还在喔，晚一点要不要一起休息？" };
+      return { status: "sleepy", message: stageMessages.nightFollow };
     }
     return null;
   }
 
   if (activeAttached) {
-    return { status: "message", message: "要不要再摸摸我呀？我会乖一点。" };
+    return { status: "message", message: stageMessages.attachedFollow };
   }
 
   if (activeChatWarmth) {
-    return { status: "message", message: "如果你还想说，我会安静继续陪你。" };
+    return { status: "message", message: stageMessages.supportFollow };
   }
 
   if (activeChat) {
-    return { status: "happy", message: "刚刚和你聊天我很开心，还想继续陪你。" };
+    return { status: "happy", message: stageMessages.chatFollow };
   }
 
   if (hasBeenIdleLongEnough(input.relationship.lastInteractionAt, input.now)) {
-    return { status: "message", message: "我在这里等你，想理我了就叫我。" };
+    return { status: "message", message: stageMessages.idleFollow };
   }
 
   return null;

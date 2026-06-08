@@ -4,6 +4,15 @@ import type { RelationshipMemory } from "./memory/memoryTypes.js";
 import type { MoodName } from "./moodEngine.js";
 import { decidePlayfulPresence } from "./playfulPresence.js";
 
+function relationshipStage(relationship: RelationshipMemory | undefined) {
+  if (!relationship) return "new" as const;
+  const average = (relationship.familiarity + relationship.affection + relationship.engagement + relationship.trust) / 4;
+  if (average >= 70) return "trusted" as const;
+  if (average >= 45) return "close" as const;
+  if (average >= 20) return "familiar" as const;
+  return "new" as const;
+}
+
 export function maybeCreatePresencePulse(input: {
   now: string;
   lastPresenceAt?: string;
@@ -21,14 +30,22 @@ export function maybeCreatePresencePulse(input: {
     return null;
   }
 
+  const stage = relationshipStage(input.relationship);
+
   if (input.longWorkSession) {
+    const longWorkMessage = stage === "trusted"
+      ? "先喝口水，我会继续在这陪你。"
+      : stage === "close"
+        ? "先喝口水吧，我会在旁边等你。"
+        : "要不要喝口水？我会乖乖等你。";
+
     return {
       status: "message",
       visibleStatus: "message",
       baseStatus: "message",
       overlayStatus: null,
       task: "",
-      message: "要不要喝口水？我会乖乖等你。",
+      message: longWorkMessage,
       source: "presence",
       updatedAt: input.now
     };
@@ -67,13 +84,17 @@ export function maybeCreatePresencePulse(input: {
   }
 
   if (input.mood === "lonely") {
+    const lonelyMessage = stage === "trusted"
+      ? "我会在这安静陪着你，想说话就叫我。"
+      : "我会安静陪在你旁边。";
+
     return {
       status: "message",
       visibleStatus: "message",
       baseStatus: "message",
       overlayStatus: null,
       task: "",
-      message: "我会安静陪在你旁边。",
+      message: lonelyMessage,
       source: "presence",
       updatedAt: input.now
     };
