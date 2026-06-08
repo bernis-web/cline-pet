@@ -123,6 +123,10 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - 气泡位置在 `src/app/renderer/petStyles.css` 的 `.speech-bubble`，当前使用 `bottom: 238px`，更接近卡卡头顶。
 - DeepSeek prompt 在 `src/app/main/chatService.ts`，要求卡卡“更关心用户”、可爱但不过分卖萌、简短、尊重隐私边界。
 - 聊天成功后，`src/app/main/main.ts` 调用 `createChatMoodStatus()`，再 `notifyRenderer()`，让卡卡切到更明显的 mood-driven 姿态（友好聊天当前为 `happy`）。
+- `RelationshipMemory.playfulChatUntil` 和 `playfulAttachedUntil` 代表短期灵动窗口，不属于长期关系分值。
+- 压力/负面聊天不会进入开心窗口；它们会改写为 `recentWarmth.source = "chat"` 的安静陪伴窗口。
+- `src/app/main/playfulPresence.ts` 负责聊天后开心跟随、摸头后黏人跟随、压力聊天后的安静陪伴、夜间收敛、工作静默和低频空闲轻气泡。
+- `presenceService.ts` 先处理长时间工作提醒，再映射 playful decision，最后才回退到原有 lonely 提示。
 
 ## Cyber Life v1
 
