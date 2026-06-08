@@ -2,6 +2,7 @@ import { readContextMemories, writeContextMemories } from "./contextStore.js";
 import { appendMemoryBlockRule, readMemoryBlockRules } from "./memoryBlocklistStore.js";
 import { loadRelationshipMemory } from "./relationshipStore.js";
 import type { ContextMemoryItem, RelationshipMemory } from "./memoryTypes.js";
+import { getRelationshipPersona } from "../relationshipPersona.js";
 
 export type RelationshipStage = "new" | "familiar" | "close" | "trusted";
 
@@ -52,15 +53,15 @@ export function deriveRelationshipOverview(relationship: RelationshipMemory): Re
   const average = (familiarity + affection + engagement + trust) / 4;
 
   if (average >= 70) {
-    return { stage: "trusted", stageLabel: "信赖", stageDescription: "卡卡很信赖你，也会更稳定地陪在旁边。", familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
+    return { stage: "trusted", stageLabel: "信赖", stageDescription: getRelationshipPersona("trusted").stageDescription, familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
   }
   if (average >= 45) {
-    return { stage: "close", stageLabel: "亲近", stageDescription: "卡卡和你更亲近了，会更自然地回应你的习惯。", familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
+    return { stage: "close", stageLabel: "亲近", stageDescription: "卡卡和你更亲近了，会更自然地贴近你的节奏回应你。", familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
   }
   if (average >= 20) {
-    return { stage: "familiar", stageLabel: "熟悉", stageDescription: "卡卡已经记得一些与你相处的节奏。", familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
+    return { stage: "familiar", stageLabel: "熟悉", stageDescription: "卡卡已经开始熟悉你的节奏，会更自然地接你的情绪。", familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
   }
-  return { stage: "new", stageLabel: "初识", stageDescription: "卡卡正在慢慢认识你。", familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
+  return { stage: "new", stageLabel: "初识", stageDescription: "卡卡正在慢慢认识你，还比较克制地陪在你旁边。", familiarity, affection, engagement, trust, updatedAt: relationship.updatedAt };
 }
 
 function toRendererMemory(item: ContextMemoryItem): RendererContextMemory {

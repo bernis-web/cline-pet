@@ -43,6 +43,7 @@ Kaka is a Windows 11 Electron + React desktop pet for Cline. It renders a local 
 - Relationship overview: `初识` / `熟悉` / `亲近` / `信赖` derived from familiarity, affection, engagement, and trust scores in `relationship.json`.
 - Presence runtime now receives readable long-chat activity from the renderer and treats continuous `loading` / `thinking` over 90 minutes as a long-work care opportunity.
 - Playful Presence v1: short-lived `playfulChatUntil` / `playfulAttachedUntil` windows now drive a happy daytime mood bias plus low-frequency follow-up bubbles after chat, head-pat, stressed/supportive chats, and long idle periods, while keeping night-time and work-session quiet rules intact.
+- Relationship Persona v1: `new/familiar/close/trusted` now change Kaka’s chat tone, proactive bubble tone, comfort lines, reminder wording, and relationship copy while keeping the existing relationship scoring model.
 
 ## Main files to know
 
@@ -136,7 +137,7 @@ If these work but Cline tool calls do not, rerun integration and reload VS Code/
 
 ## Likely next tasks
 
-1. Consider whether Playful Presence v1 should grow into a fuller state machine with more relationship-stage-specific lines.
+1. Continue from Relationship Persona v1 into a deeper chat-personality upgrade with richer address styles and memory-aware phrasing.
 2. Improve MCP connection UX: clearer diagnostics, setup guidance, and stale-connection recovery hints.
 3. Consider richer relationship/profile UI with recent positive events.
 4. Explore richer proactive rhythms after privacy controls prove stable.

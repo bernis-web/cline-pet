@@ -85,6 +85,7 @@ describe("memoryManagementService", () => {
 
     expect(overview.relationship.stage).toBe("close");
     expect(overview.relationship.stageLabel).toBe("亲近");
+    expect(overview.relationship.stageDescription).toContain("更自然地贴近你");
     expect(overview.memories.map((item) => item.id)).toEqual(["new", "old"]);
     expect(overview.memories[0]).toMatchObject({ kind: "preference", text: "用户喜欢卡卡温柔提醒", weight: 80 });
   });

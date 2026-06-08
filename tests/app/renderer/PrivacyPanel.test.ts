@@ -9,7 +9,7 @@ const overview: PrivacyOverview = {
   relationship: {
     stage: "close",
     stageLabel: "亲近",
-    stageDescription: "卡卡和你更亲近了，会更自然地回应你的习惯。",
+    stageDescription: "卡卡和你更亲近了，会更自然地贴近你的节奏回应你。",
     familiarity: 50,
     affection: 60,
     engagement: 70,
@@ -93,7 +93,7 @@ describe("PrivacyPanel", () => {
 
     const relationshipCard = rootElement.querySelector(".relationship-card");
     expect(relationshipCard?.textContent).toContain("亲近");
-    expect(relationshipCard?.textContent).toContain("卡卡和你更亲近了");
+    expect(relationshipCard?.textContent).toContain("更自然地贴近你");
     expect(relationshipCard?.textContent).not.toContain("熟悉度");
     expect(relationshipCard?.textContent).not.toContain("亲密度");
     expect(relationshipCard?.textContent).not.toContain("互动度");

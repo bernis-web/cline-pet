@@ -127,6 +127,9 @@ cd d:/projects/cline-mcp-workspace/cline-desktop-pet/.worktrees/feat-12-state-lo
 - 压力/负面聊天不会进入开心窗口；它们会改写为 `recentWarmth.source = "chat"` 的安静陪伴窗口。
 - `src/app/main/playfulPresence.ts` 负责聊天后开心跟随、摸头后黏人跟随、压力聊天后的安静陪伴、夜间收敛、工作静默和低频空闲轻气泡。
 - `presenceService.ts` 先处理长时间工作提醒，再映射 playful decision，最后才回退到原有 lonely 提示。
+- `relationshipPersona.ts` 统一定义 `new/familiar/close/trusted` 四个阶段的人格 profile，供聊天 prompt、主动气泡、安慰和提醒共用。
+- `memoryService.ts` 现在会把 `stage=<...>` 编进 `relationshipSummary`，供 chat prompt 构造读取。
+- `chatService.ts` 不再只用一条固定 system prompt，而是把“当前关系阶段 + 阶段人格边界”一起注入。
 
 ## Cyber Life v1
 
