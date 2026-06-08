@@ -34,6 +34,7 @@ describe("head pat interaction service", () => {
       engagement: 50,
       trust: 60,
       lastHeadPatAt: "2026-05-30T04:00:01.200Z",
+      playfulAttachedUntil: "2026-05-30T04:30:01.200Z",
       recentWarmth: {
         source: "head-pat",
         intensity: "soft",

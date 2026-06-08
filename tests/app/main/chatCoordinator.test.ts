@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { runKakaChatTurn } from "../../../src/app/main/chatCoordinator";
 import { appendContextMemory } from "../../../src/app/main/memory/contextStore";
 import { readChatHistory } from "../../../src/app/main/memory/chatHistoryStore";
+import { loadRelationshipMemory } from "../../../src/app/main/memory/relationshipStore";
 
 const config = { apiKey: "key", baseUrl: "https://api.deepseek.com", model: "deepseek-chat" };
 
@@ -45,6 +46,7 @@ describe("chatCoordinator", () => {
       expect.objectContaining({ content: expect.stringContaining("温柔但不过分卖萌") })
     ]) }));
     expect(readChatHistory(root)[0]).toEqual(expect.objectContaining({ userText: "你记得我喜欢什么样的卡卡吗？" }));
+    expect(loadRelationshipMemory(root).playfulChatUntil).toBe("2026-06-01T04:15:00.000Z");
     if (result.ok) expect(result.moodStatus.status).toBe("happy");
   });
 });

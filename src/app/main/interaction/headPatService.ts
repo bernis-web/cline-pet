@@ -14,6 +14,7 @@ export type HeadPatInteractionResult =
 const MIN_EFFECTIVE_HEAD_PAT_MS = 600;
 const MAX_REASONABLE_HEAD_PAT_MS = 30_000;
 const WARMTH_TTL_MS = 30 * 60 * 1000;
+const PLAYFUL_ATTACHED_WINDOW_MS = 30 * 60 * 1000;
 const HEAD_PAT_EVENT_TEXT = "今天被轻轻摸了摸头";
 
 function parseDate(value: string | undefined): Date | null {
@@ -39,6 +40,7 @@ export function recordHeadPatInteraction(root: string, input: HeadPatInteraction
   const endedAtDate = parseDate(input.endedAt) ?? new Date();
   const endedAt = endedAtDate.toISOString();
   const expiresAt = new Date(endedAtDate.getTime() + WARMTH_TTL_MS).toISOString();
+  const playfulAttachedUntil = new Date(endedAtDate.getTime() + PLAYFUL_ATTACHED_WINDOW_MS).toISOString();
 
   const relationship = saveRelationshipMemory(root, (current) => {
     const recentEvents = hasHeadPatEventToday(current, endedAt)
@@ -49,6 +51,7 @@ export function recordHeadPatInteraction(root: string, input: HeadPatInteraction
       ...current,
       lastInteractionAt: endedAt,
       lastHeadPatAt: endedAt,
+      playfulAttachedUntil,
       recentWarmth: {
         source: "head-pat",
         intensity: "soft",

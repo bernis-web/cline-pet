@@ -24,6 +24,8 @@ export type RelationshipMemory = {
   lastInteractionAt?: string;
   lastHeadPatAt?: string;
   recentWarmth?: RelationshipWarmth;
+  playfulChatUntil?: string;
+  playfulAttachedUntil?: string;
   recentEvents: { text: string; createdAt: string; weight: number }[];
   updatedAt: string;
 };

@@ -37,4 +37,44 @@ describe("relationshipEvents", () => {
     expect(updated.engagement).toBeLessThanOrEqual(3);
     expect(updated.recentEvents.filter((event) => event.text.includes("一起专注了一会儿"))).toHaveLength(1);
   });
+
+  it("opens a short playful chat window after a normal chat turn", () => {
+    const root = tempRoot();
+    const updated = applyChatRelationshipEvent(root, {
+      now: "2026-06-01T04:00:00.000Z",
+      sentiment: "positive",
+      relationshipEvent: "chat"
+    });
+
+    expect(updated.playfulChatUntil).toBe("2026-06-01T04:15:00.000Z");
+  });
+
+  it("does not open a playful chat window for focused work-session turns", () => {
+    const root = tempRoot();
+    const updated = applyChatRelationshipEvent(root, {
+      now: "2026-06-01T04:00:00.000Z",
+      sentiment: "focused",
+      relationshipEvent: "work-session"
+    });
+
+    expect(updated.playfulChatUntil).toBeUndefined();
+  });
+
+  it("turns stressed chats into a quiet warmth window instead of a happy one", () => {
+    const root = tempRoot();
+    const updated = applyChatRelationshipEvent(root, {
+      now: "2026-06-01T06:00:00.000Z",
+      sentiment: "stressed",
+      relationshipEvent: "support"
+    });
+
+    expect(updated.playfulChatUntil).toBeUndefined();
+    expect(updated.recentWarmth).toEqual({
+      source: "chat",
+      intensity: "normal",
+      updatedAt: "2026-06-01T06:00:00.000Z",
+      expiresAt: "2026-06-01T06:20:00.000Z"
+    });
+    expect(loadRelationshipMemory(root).recentWarmth?.source).toBe("chat");
+  });
 });
