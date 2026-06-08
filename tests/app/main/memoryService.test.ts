@@ -36,4 +36,21 @@ describe("memoryService", () => {
     expect(context.relationshipSummary).toContain("affection=70");
     expect(context.retrievedMemories).toHaveLength(1);
   });
+
+  it("includes the derived relationship stage inside relationshipSummary", () => {
+    const context = buildMemoryPromptContext({
+      profile: { likes: [], dislikes: [], habits: [], topics: [], notes: [], updatedAt: "2026-06-01T00:00:00.000Z" },
+      relationship: {
+        familiarity: 60,
+        affection: 60,
+        engagement: 60,
+        trust: 60,
+        recentEvents: [],
+        updatedAt: "2026-06-01T00:00:00.000Z"
+      },
+      memories: []
+    });
+
+    expect(context.relationshipSummary).toContain("stage=close");
+  });
 });

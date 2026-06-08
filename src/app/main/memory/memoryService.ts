@@ -1,3 +1,4 @@
+import { deriveRelationshipOverview } from "./memoryManagementService.js";
 import type { ContextMemoryItem, MemoryPromptContext, ProfileMemory, RelationshipMemory } from "./memoryTypes.js";
 
 export function buildMemoryPromptContext(input: {
@@ -10,7 +11,8 @@ export function buildMemoryPromptContext(input: {
     input.profile.likes.length > 0 && `likes=${input.profile.likes.join("/")}`
   ].filter(Boolean).join("; ") || null;
 
-  const relationshipSummary = `familiarity=${input.relationship.familiarity} affection=${input.relationship.affection} engagement=${input.relationship.engagement} trust=${input.relationship.trust}`;
+  const stage = deriveRelationshipOverview(input.relationship).stage;
+  const relationshipSummary = `stage=${stage} familiarity=${input.relationship.familiarity} affection=${input.relationship.affection} engagement=${input.relationship.engagement} trust=${input.relationship.trust}`;
 
   return {
     profileSummary,

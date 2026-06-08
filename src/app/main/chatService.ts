@@ -1,8 +1,27 @@
 import type { DeepSeekConfig } from "./config.js";
 import type { MemoryPromptContext } from "./memory/memoryTypes.js";
 import { requestDeepSeekChat, type DeepSeekChatResult, type DeepSeekMessage } from "./deepseekClient.js";
+import { getRelationshipPersona } from "./relationshipPersona.js";
 
 export type ChatReplyResult = DeepSeekChatResult | { ok: false; errorCode: "CHAT_EMPTY_MESSAGE"; message: string };
+
+function relationshipStageFromSummary(summary: string | null | undefined) {
+  const match = summary?.match(/stage=(new|familiar|close|trusted)/);
+  return (match?.[1] as "new" | "familiar" | "close" | "trusted" | undefined) ?? "familiar";
+}
+
+function buildSystemPrompt(relationshipSummary?: string | null) {
+  const stage = relationshipStageFromSummary(relationshipSummary);
+  const persona = getRelationshipPersona(stage);
+  return [
+    "你是卡卡，一个运行在用户电脑本地的桌面电子宠物。",
+    "你要更关心用户一点，语气温柔、可爱但不过分卖萌；回答保持简短、具体、有陪伴感，可以轻轻鼓励用户、提醒休息和喝水。",
+    `当前关系阶段：${stage}。`,
+    `当前阶段的聊天风格：${persona.chatStyle}`,
+    `当前阶段的边界要求：${persona.boundaryRule}`,
+    "尊重隐私边界：不要声称你能读取用户代码、文件、屏幕或隐私信息，除非用户主动提供。"
+  ].join("");
+}
 
 export async function createChatReply(input: {
   text: string;
@@ -28,7 +47,7 @@ export async function createChatReply(input: {
   const messages: DeepSeekMessage[] = [
     {
       role: "system",
-      content: "你是卡卡，一个运行在用户电脑本地的桌面电子宠物。你要更关心用户一点，语气温柔、可爱但不过分卖萌；回答保持简短、具体、有陪伴感，可以轻轻鼓励用户、提醒休息和喝水。尊重隐私边界：不要声称你能读取用户代码、文件、屏幕或隐私信息，除非用户主动提供。"
+      content: buildSystemPrompt(input.memoryContext?.relationshipSummary)
     },
     ...memoryMessages,
     { role: "user", content: text }

@@ -8,6 +8,11 @@ describe("chat service", () => {
     const result = await createChatReply({
       text: "你是谁？",
       config,
+      memoryContext: {
+        profileSummary: null,
+        relationshipSummary: "stage=close familiarity=60 affection=65 engagement=62 trust=64",
+        retrievedMemories: []
+      },
       requester: async ({ messages }) => {
         expect(messages[0]).toEqual({
           role: "system",
@@ -17,7 +22,10 @@ describe("chat service", () => {
         expect(messages[0].content).toContain("可爱");
         expect(messages[0].content).toContain("简短");
         expect(messages[0].content).toContain("隐私");
-        expect(messages[1]).toEqual({ role: "user", content: "你是谁？" });
+        expect(messages[0].content).toContain("当前关系阶段");
+        expect(messages[0].content).toContain("更贴近");
+        expect(messages[0].content).toContain("不声称读取用户文件");
+        expect(messages[2]).toEqual({ role: "user", content: "你是谁？" });
         return { ok: true, data: { text: "我是卡卡。" } };
       }
     });
@@ -63,5 +71,23 @@ describe("chat service", () => {
       ])
     }));
     expect(recordTurn).toHaveBeenCalledOnce();
+  });
+
+  it("uses relationship stage information to inject persona-specific prompt guidance", async () => {
+    await createChatReply({
+      text: "今天有点累。",
+      config,
+      memoryContext: {
+        profileSummary: "preferredAddress=主人",
+        relationshipSummary: "stage=trusted familiarity=80 affection=85 engagement=78 trust=82",
+        retrievedMemories: []
+      },
+      requester: async ({ messages }) => {
+        expect(messages[0].content).toContain("当前关系阶段：trusted");
+        expect(messages[0].content).toContain("最熟络");
+        expect(messages[0].content).toContain("不过度依附");
+        return { ok: true, data: { text: "先歇一下，我会在这陪你。" } };
+      }
+    });
   });
 });
