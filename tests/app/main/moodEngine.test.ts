@@ -91,6 +91,48 @@ describe("mood engine", () => {
     expect(mood).toEqual({ name: "happy", suggestedStatus: "happy" });
   });
 
+  it("leans happy during an active attached window when the user is idle in daytime", () => {
+    const mood = deriveMoodState({
+      now: "2026-06-01T15:00:00.000Z",
+      relationship: {
+        familiarity: 10,
+        affection: 10,
+        engagement: 10,
+        trust: 10,
+        playfulAttachedUntil: "2026-06-01T15:30:00.000Z",
+        recentEvents: [],
+        updatedAt: "2026-06-01T14:55:00.000Z"
+      },
+      hasRecentChat: false,
+      lastChatSentiment: "neutral",
+      memoryHitCount: 0,
+      clineVisibleStatus: "idle"
+    });
+
+    expect(mood).toEqual({ name: "happy", suggestedStatus: "happy" });
+  });
+
+  it("keeps night-time sleepy behavior even if a playful chat window is active", () => {
+    const mood = deriveMoodState({
+      now: "2026-05-29T23:30:00.000Z",
+      relationship: {
+        familiarity: 20,
+        affection: 20,
+        engagement: 15,
+        trust: 20,
+        playfulChatUntil: "2026-05-29T23:45:00.000Z",
+        recentEvents: [],
+        updatedAt: "2026-05-29T23:00:00.000Z"
+      },
+      hasRecentChat: false,
+      lastChatSentiment: "neutral",
+      memoryHitCount: 0,
+      clineVisibleStatus: "idle"
+    });
+
+    expect(mood.name).toBe("sleepy");
+  });
+
   it("ignores expired warmth", () => {
     const mood = deriveMoodState({
       now: "2026-05-30T05:00:00.000Z",

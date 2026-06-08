@@ -15,6 +15,11 @@ function hasActiveWarmth(relationship: RelationshipMemory, now: string) {
   return new Date(relationship.recentWarmth.expiresAt).getTime() > new Date(now).getTime();
 }
 
+function hasActivePlayfulWindow(until: string | undefined, now: string) {
+  if (!until) return false;
+  return new Date(until).getTime() > new Date(now).getTime();
+}
+
 export function deriveMoodState(input: {
   now: string;
   relationship: RelationshipMemory;
@@ -25,6 +30,8 @@ export function deriveMoodState(input: {
 }): MoodState {
   const hour = new Date(input.now).getUTCHours();
   const activeWarmth = hasActiveWarmth(input.relationship, input.now);
+  const activePlayfulChat = hasActivePlayfulWindow(input.relationship.playfulChatUntil, input.now);
+  const activePlayfulAttached = hasActivePlayfulWindow(input.relationship.playfulAttachedUntil, input.now);
 
   if (input.clineVisibleStatus === "loading" || input.clineVisibleStatus === "thinking") {
     return { name: "curious", suggestedStatus: input.clineVisibleStatus };
@@ -55,6 +62,10 @@ export function deriveMoodState(input: {
 
   if (input.lastChatSentiment === "tired") {
     return { name: "sleepy", suggestedStatus: "sleepy" };
+  }
+
+  if (activePlayfulChat || activePlayfulAttached) {
+    return { name: "happy", suggestedStatus: "happy" };
   }
 
   if (input.memoryHitCount >= 2 && input.relationship.affection >= 50) {
