@@ -227,9 +227,10 @@ app.whenReady().then(async () => {
   let lastPresenceAt: string | undefined;
   const presenceInterval = setInterval(() => {
     const now = new Date().toISOString();
+    const relationship = loadRelationshipMemory(appDataBaseDir);
     const mood = deriveMoodState({
       now,
-      relationship: loadRelationshipMemory(appDataBaseDir),
+      relationship,
       hasRecentChat: false,
       lastChatSentiment: "neutral",
       memoryHitCount: 0,
@@ -241,6 +242,7 @@ app.whenReady().then(async () => {
       lastPresenceAt,
       latestVisibleStatus: latestStatus.visibleStatus,
       mood: mood.name,
+      relationship,
       userIsReading: presenceRuntime.userIsReading,
       longWorkSession: hasLongWorkSession(presenceRuntime, { now })
     });

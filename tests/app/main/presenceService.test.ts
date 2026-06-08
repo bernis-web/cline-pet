@@ -47,4 +47,50 @@ describe("presence service", () => {
 
     expect(pulse?.message).toContain("喝口水");
   });
+
+  it("maps a playful chat decision into a presence payload", () => {
+    const pulse = maybeCreatePresencePulse({
+      now: "2026-06-01T15:00:00.000Z",
+      lastPresenceAt: "2026-06-01T10:00:00.000Z",
+      latestVisibleStatus: "idle",
+      mood: "calm",
+      relationship: {
+        familiarity: 10,
+        affection: 10,
+        engagement: 10,
+        trust: 10,
+        playfulChatUntil: "2026-06-01T15:15:00.000Z",
+        recentEvents: [],
+        updatedAt: "2026-06-01T14:50:00.000Z"
+      }
+    });
+
+    expect(pulse).toEqual(expect.objectContaining({
+      status: "happy",
+      visibleStatus: "happy",
+      source: "presence",
+      message: "刚刚和你聊天我很开心，还想继续陪你。"
+    }));
+  });
+
+  it("keeps the long-work reminder ahead of playful follow-ups", () => {
+    const pulse = maybeCreatePresencePulse({
+      now: "2026-06-01T21:00:00.000Z",
+      lastPresenceAt: "2026-06-01T10:00:00.000Z",
+      latestVisibleStatus: "loading",
+      mood: "curious",
+      longWorkSession: true,
+      relationship: {
+        familiarity: 10,
+        affection: 10,
+        engagement: 10,
+        trust: 10,
+        playfulChatUntil: "2026-06-01T21:15:00.000Z",
+        recentEvents: [],
+        updatedAt: "2026-06-01T20:50:00.000Z"
+      }
+    });
+
+    expect(pulse?.message).toContain("喝口水");
+  });
 });
